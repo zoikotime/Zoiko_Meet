@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: zoiko-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zoiko
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zoiko_dev}
+      POSTGRES_DB: zoiko
+    volumes:
+      - zoiko_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zoiko -d zoiko"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    container_name: zoiko-server
+    restart: unless-stopped
+    environment:
+      # If DATABASE_URL is set in your .env (e.g. Supabase), it overrides this.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://zoiko:${POSTGRES_PASSWORD:-zoiko_dev}@db:5432/zoiko}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8000}
+    container_name: zoiko-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+
+volumes:
+  zoiko_pg_data:
