@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
+import Icon from './Icon'
 import './Layout.css'
 
 const NAV = [
-  { to: '/', label: 'Home', icon: '🏠', end: true },
-  { to: '/chat', label: 'Chat', icon: '💬' },
-  { to: '/meet', label: 'Meet', icon: '📹' },
+  { to: '/', label: 'Home', icon: 'home', end: true },
+  { to: '/chat', label: 'Chat', icon: 'chat' },
+  { to: '/meet', label: 'Meet', icon: 'video' },
 ]
 
 export default function Layout() {
@@ -23,8 +24,12 @@ export default function Layout() {
       <aside className="app-sidebar">
         <div className="brand">
           <div className="brand-mark">Z</div>
-          <span>Zoiko Meet</span>
+          <div className="brand-text">
+            <span className="brand-name">Zoiko</span>
+            <span className="brand-sub">Meet</span>
+          </div>
         </div>
+
         <nav className="side-nav">
           {NAV.map((item) => (
             <NavLink
@@ -33,21 +38,31 @@ export default function Layout() {
               end={item.end}
               className={({ isActive }) => 'side-nav-item' + (isActive ? ' active' : '')}
             >
-              <span className="side-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="side-nav-indicator" aria-hidden="true" />
+              <span className="side-nav-icon"><Icon name={item.icon} size={18} /></span>
+              <span className="side-nav-label">{item.label}</span>
             </NavLink>
           ))}
         </nav>
+
         <div className="side-footer">
           {user && (
             <div className="side-user" title={user.email}>
-              <Avatar name={user.name} color={user.avatar_color} size="sm" />
+              <div className="side-user-avatar">
+                <Avatar name={user.name} color={user.avatar_color} size="sm" />
+                <span className="presence-dot" />
+              </div>
               <div className="side-user-info">
                 <div className="side-user-name">{user.name}</div>
                 <div className="side-user-email">{user.email}</div>
               </div>
-              <button className="ghost side-user-logout" onClick={handleLogout} title="Sign out">
-                ⎋
+              <button
+                className="ghost side-user-logout"
+                onClick={handleLogout}
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <Icon name="logout" size={16} />
               </button>
             </div>
           )}

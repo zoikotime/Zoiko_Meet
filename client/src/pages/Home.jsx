@@ -2,15 +2,31 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
 import './Home.css'
 
 function formatWhen(iso) {
   try {
     const d = new Date(iso)
-    return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+    const now = new Date()
+    const diffMs = now - d
+    const mins = Math.floor(diffMs / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
   } catch {
     return ''
   }
+}
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 5) return 'Good night'
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
 }
 
 export default function Home() {
@@ -48,31 +64,65 @@ export default function Home() {
     navigate(`/meet/${cleaned}`)
   }
 
+  const firstName = user?.name?.split(' ')[0] || 'there'
+  const today = new Date().toLocaleDateString([], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
+
   return (
     <div className="home">
-      <div className="home-hero">
-        <div>
-          <h1>Welcome, {user?.name?.split(' ')[0] || 'there'} 👋</h1>
-          <p>Jump into a meeting or pick up a conversation.</p>
+      <header className="home-hero">
+        <div className="home-hero-top">
+          <span className="badge accent">
+            <Icon name="sparkle" size={12} />
+            <span>Welcome to Zoiko</span>
+          </span>
+          <span className="home-hero-date">{today}</span>
         </div>
-      </div>
+        <h1 className="home-hero-title">
+          {greeting()}, <span className="grad">{firstName}</span>
+        </h1>
+        <p className="home-hero-sub">
+          Jump into a meeting, share a link, or keep a conversation going.
+        </p>
+      </header>
 
-      {err && <div className="auth-error" style={{ marginBottom: 16 }}>{err}</div>}
+      {err && (
+        <div className="auth-error" style={{ marginBottom: 16 }}>
+          <Icon name="close" size={14} /> {err}
+        </div>
+      )}
 
       <div className="home-grid">
-        <div className="home-card">
-          <div className="home-card-icon">📹</div>
+        <article className="home-card home-card-featured">
+          <div className="home-card-glow" />
+          <div className="home-card-head">
+            <div className="home-card-icon gradient">
+              <Icon name="video" size={22} />
+            </div>
+            <span className="badge live">Live</span>
+          </div>
           <h3>New meeting</h3>
-          <p>Start an instant video call and share the link with others.</p>
+          <p>Start an instant video call and share the link with anyone.</p>
           <div className="home-card-actions">
-            <button className="primary" onClick={startInstant} disabled={busy}>
-              {busy ? 'Starting…' : 'Start instant meeting'}
+            <button className="primary lg" onClick={startInstant} disabled={busy}>
+              {busy ? (
+                <><span className="spinner" style={{ width: 16, height: 16 }} /> Starting…</>
+              ) : (
+                <><Icon name="bolt" size={16} /> Start instant meeting</>
+              )}
             </button>
           </div>
-        </div>
+        </article>
 
-        <div className="home-card">
-          <div className="home-card-icon">🔗</div>
+        <article className="home-card">
+          <div className="home-card-head">
+            <div className="home-card-icon">
+              <Icon name="link" size={22} />
+            </div>
+          </div>
           <h3>Join with code</h3>
           <p>Enter the meeting code someone shared with you.</p>
           <form className="home-card-actions" onSubmit={joinCode}>
@@ -80,51 +130,72 @@ export default function Home() {
               placeholder="abc-defg-hij"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              className="mono"
             />
             <button type="submit" className="primary" disabled={!code.trim()}>
               Join
             </button>
           </form>
-        </div>
+        </article>
 
-        <div className="home-card">
-          <div className="home-card-icon">💬</div>
-          <h3>Team chat</h3>
-          <p>Continue a channel conversation or start a direct message.</p>
-          <div className="home-card-actions">
-            <button onClick={() => navigate('/chat')}>Open chat</button>
+        <article className="home-card">
+          <div className="home-card-head">
+            <div className="home-card-icon">
+              <Icon name="chat" size={22} />
+            </div>
           </div>
-        </div>
+          <h3>Team chat</h3>
+          <p>Continue a channel conversation or start a new DM.</p>
+          <div className="home-card-actions">
+            <button onClick={() => navigate('/chat')} className="outline">
+              Open chat <Icon name="arrowLeft" size={14} style={{ transform: 'rotate(180deg)' }} />
+            </button>
+          </div>
+        </article>
       </div>
 
-      <div className="home-section">
-        <div className="home-section-title">Recent meetings</div>
+      <section className="home-section">
+        <div className="home-section-head">
+          <div>
+            <div className="home-section-title">Recent meetings</div>
+            <div className="home-section-sub">Your latest rooms — click to rejoin.</div>
+          </div>
+        </div>
         {recent.length === 0 ? (
-          <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-            No meetings yet — start one above to see it here.
-          </p>
+          <div className="home-empty">
+            <div className="home-empty-icon"><Icon name="calendar" size={24} /></div>
+            <div>
+              <div className="home-empty-title">No meetings yet</div>
+              <div className="home-empty-sub">Start one above to see it here.</div>
+            </div>
+          </div>
         ) : (
           <div className="home-recent">
             {recent.map((m) => (
-              <div
+              <button
                 key={m.id}
                 className="home-recent-item"
                 onClick={() => navigate(`/meet/${m.code}`)}
-                role="button"
-                tabIndex={0}
-                style={{ cursor: 'pointer' }}
               >
-                <div className="home-card-icon">📹</div>
-                <div className="home-recent-title">
-                  {m.title}
-                  <div className="home-recent-code">{m.code}</div>
+                <div className="home-recent-icon">
+                  <Icon name="video" size={18} />
                 </div>
-                <div className="home-recent-date">{formatWhen(m.created_at)}</div>
-              </div>
+                <div className="home-recent-body">
+                  <div className="home-recent-title">{m.title}</div>
+                  <div className="home-recent-code mono">{m.code}</div>
+                </div>
+                <div className="home-recent-meta">
+                  <Icon name="clock" size={13} />
+                  <span>{formatWhen(m.created_at)}</span>
+                </div>
+                <div className="home-recent-chev">
+                  <Icon name="arrowLeft" size={16} style={{ transform: 'rotate(180deg)' }} />
+                </div>
+              </button>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }

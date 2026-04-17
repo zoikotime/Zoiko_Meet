@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
 import './Auth.css'
+
+const FEATURES = [
+  { icon: 'bolt', title: 'Start in seconds', desc: 'Instant meetings, no scheduling.' },
+  { icon: 'users', title: 'Invite your team', desc: 'Channels, DMs, presence.' },
+  { icon: 'screen', title: 'Share your screen', desc: 'One tap to present anything.' },
+  { icon: 'sparkle', title: 'Delightful UX', desc: 'Crafted with care in every pixel.' },
+]
 
 export default function Register() {
   const { register } = useAuth()
@@ -32,17 +40,42 @@ export default function Register() {
 
   return (
     <div className="auth-wrap">
-      <div className="auth-pane">
-        <div className="auth-card">
-          <div className="auth-brand">
-            <span className="auth-brand-mark">Z</span>
+      <div className="auth-grid" />
+      <div className="auth-orb-3" />
+      <div className="auth-shell">
+        <section className="auth-hero">
+          <div className="auth-hero-logo">
+            <span className="auth-hero-logo-mark">Z</span>
             <span>Zoiko Meet</span>
           </div>
+          <h1>
+            Everything your team<br />
+            needs to <span className="grad">collaborate.</span>
+          </h1>
+          <p className="auth-hero-sub">
+            Video meetings, persistent chat, and one simple home — built for your team.
+          </p>
+          <div className="auth-hero-features">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="auth-feature">
+                <div className="auth-feature-icon"><Icon name={f.icon} size={18} /></div>
+                <div className="auth-feature-title">{f.title}</div>
+                <div className="auth-feature-desc">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="auth-card">
           <h1 className="auth-title">Create your account</h1>
           <p className="auth-sub">Get started with video meetings and team chat.</p>
-          {error && <div className="auth-error">{error}</div>}
+          {error && (
+            <div className="auth-error">
+              <Icon name="close" size={14} /> {error}
+            </div>
+          )}
           <form className="auth-form" onSubmit={submit}>
-            <div>
+            <div className="auth-field">
               <label className="auth-label">Full name</label>
               <input
                 value={name}
@@ -52,7 +85,7 @@ export default function Register() {
                 placeholder="Jane Doe"
               />
             </div>
-            <div>
+            <div className="auth-field">
               <label className="auth-label">Email</label>
               <input
                 type="email"
@@ -62,7 +95,7 @@ export default function Register() {
                 placeholder="you@example.com"
               />
             </div>
-            <div>
+            <div className="auth-field">
               <label className="auth-label">Password</label>
               <input
                 type="password"
@@ -73,20 +106,15 @@ export default function Register() {
                 placeholder="At least 6 characters"
               />
             </div>
-            <button type="submit" className="primary" disabled={busy}>
+            <button type="submit" className="primary auth-submit" disabled={busy}>
               {busy ? 'Creating…' : 'Create account'}
             </button>
           </form>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Already have an account? <Link to="/login">Sign in</Link>
+          <div className="auth-divider">Already have an account</div>
+          <div className="auth-footer">
+            <Link to="/login">Sign in →</Link>
           </div>
-        </div>
-      </div>
-      <div className="auth-pane auth-hero">
-        <div className="auth-hero-content">
-          <h2>Everything your team needs to collaborate.</h2>
-          <p>Video meetings, persistent chat, and one simple home — built for your team.</p>
-        </div>
+        </section>
       </div>
     </div>
   )

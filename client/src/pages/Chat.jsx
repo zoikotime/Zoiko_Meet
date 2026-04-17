@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, getWsBase } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import Icon from '../components/Icon'
 import './Chat.css'
 
 function formatTime(iso) {
@@ -18,6 +19,20 @@ function formatTime(iso) {
   }
 }
 
+function dayLabel(iso) {
+  try {
+    const d = new Date(iso)
+    const now = new Date()
+    const yest = new Date(now)
+    yest.setDate(yest.getDate() - 1)
+    if (d.toDateString() === now.toDateString()) return 'Today'
+    if (d.toDateString() === yest.toDateString()) return 'Yesterday'
+    return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
+  } catch {
+    return ''
+  }
+}
+
 function channelDisplay(channel, currentUserId) {
   if (channel.is_direct) {
     const other = channel.members.find((m) => m.id !== currentUserId)
@@ -26,7 +41,41 @@ function channelDisplay(channel, currentUserId) {
       color: other?.avatar_color || '#5b8def',
     }
   }
-  return { name: channel.name, color: '#5b8def' }
+  return { name: channel.name, color: '#7c8cff' }
+}
+
+// Group messages by day and collapse consecutive sends from same author within 3min
+function groupMessages(messages) {
+  const groups = []
+  let currentDay = null
+  let currentCluster = null
+  for (const m of messages) {
+    const day = new Date(m.created_at).toDateString()
+    if (day !== currentDay) {
+      currentDay = day
+      groups.push({ type: 'divider', id: `d-${day}`, date: m.created_at })
+      currentCluster = null
+    }
+    const lastCluster = currentCluster
+    const sameAuthor = lastCluster && lastCluster.sender_id === m.sender_id
+    const closeInTime =
+      lastCluster && new Date(m.created_at) - new Date(lastCluster.messages[lastCluster.messages.length - 1].created_at) < 3 * 60 * 1000
+    if (sameAuthor && closeInTime) {
+      lastCluster.messages.push(m)
+    } else {
+      const cluster = {
+        type: 'cluster',
+        id: `c-${m.id}`,
+        sender_id: m.sender_id,
+        sender_name: m.sender_name,
+        sender_color: m.sender_color,
+        messages: [m],
+      }
+      groups.push(cluster)
+      currentCluster = cluster
+    }
+  }
+  return groups
 }
 
 export default function Chat() {
@@ -40,8 +89,10 @@ export default function Chat() {
   const [draft, setDraft] = useState('')
   const [typingUsers, setTypingUsers] = useState({})
   const [showNew, setShowNew] = useState(false)
+  const [search, setSearch] = useState('')
   const wsRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const composerRef = useRef(null)
 
   const loadChannels = useCallback(async () => {
     const list = await api('/api/channels')
@@ -130,6 +181,14 @@ export default function Chat() {
     return () => clearInterval(t)
   }, [])
 
+  // Auto-grow composer
+  useEffect(() => {
+    const el = composerRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px'
+  }, [draft])
+
   const sendMessage = () => {
     const body = draft.trim()
     if (!body || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
@@ -154,50 +213,91 @@ export default function Chat() {
     return 'Several people are typing…'
   }, [typingUsers])
 
+  const filteredChannels = useMemo(() => {
+    if (!search.trim()) return channels
+    const q = search.trim().toLowerCase()
+    return channels.filter((c) => {
+      const display = channelDisplay(c, user.id)
+      return (
+        display.name.toLowerCase().includes(q) ||
+        (c.last_message_preview || '').toLowerCase().includes(q)
+      )
+    })
+  }, [channels, search, user.id])
+
+  const grouped = useMemo(() => groupMessages(messages), [messages])
+
   return (
     <div className="chat">
-      <div className="chat-list">
+      <aside className="chat-list">
         <div className="chat-list-header">
           <div className="chat-list-title">Chat</div>
-          <button className="primary" onClick={() => setShowNew(true)}>+ New</button>
+          <button
+            className="primary sm chat-new-btn"
+            onClick={() => setShowNew(true)}
+            aria-label="New conversation"
+          >
+            <Icon name="plus" size={14} /> New
+          </button>
         </div>
+
+        <div className="chat-search">
+          <Icon name="search" size={14} className="chat-search-icon" />
+          <input
+            placeholder="Search conversations…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
         <div className="chat-list-items">
           {channels.length === 0 && (
-            <div style={{ padding: 20, color: 'var(--muted)', fontSize: 13 }}>
-              No conversations yet. Click <strong>+ New</strong> to start one.
+            <div className="chat-list-empty">
+              <div className="chat-list-empty-icon"><Icon name="chat" size={28} /></div>
+              <div className="chat-list-empty-title">No conversations yet</div>
+              <div className="chat-list-empty-sub">Click <strong>+ New</strong> to start one.</div>
             </div>
           )}
-          {channels.map((c) => {
+          {filteredChannels.map((c) => {
             const display = channelDisplay(c, user.id)
             const active = String(c.id) === String(channelId)
             return (
-              <div
+              <button
                 key={c.id}
                 className={'chat-list-item' + (active ? ' active' : '')}
                 onClick={() => navigate(`/chat/${c.id}`)}
               >
-                <Avatar name={display.name} color={display.color} />
+                <div className="chat-list-item-avatar">
+                  <Avatar name={display.name} color={display.color} />
+                  {c.is_direct && <span className="presence-dot" />}
+                </div>
                 <div className="chat-list-item-main">
-                  <div className="chat-list-item-name">{display.name}</div>
+                  <div className="chat-list-item-top">
+                    <span className="chat-list-item-name">{display.name}</span>
+                    {c.last_message_at && (
+                      <span className="chat-list-item-time">{formatTime(c.last_message_at)}</span>
+                    )}
+                  </div>
                   <div className="chat-list-item-preview">
                     {c.last_message_preview || (c.is_direct ? 'Start a conversation' : 'No messages yet')}
                   </div>
                 </div>
-                {c.last_message_at && (
-                  <div className="chat-list-item-time">{formatTime(c.last_message_at)}</div>
-                )}
-              </div>
+              </button>
             )
           })}
         </div>
-      </div>
+      </aside>
 
-      <div className="chat-thread">
+      <section className="chat-thread">
         {!activeChannel ? (
           <div className="chat-thread-empty">
-            <div>
-              <div style={{ fontSize: 42, marginBottom: 8 }}>💬</div>
-              <div>Select a conversation or start a new one.</div>
+            <div className="chat-thread-empty-card">
+              <div className="chat-thread-empty-icon"><Icon name="chat" size={32} /></div>
+              <h2>Start a conversation</h2>
+              <p>Select someone from the list or create a new channel to begin chatting.</p>
+              <button className="primary" onClick={() => setShowNew(true)}>
+                <Icon name="plus" size={14} /> New conversation
+              </button>
             </div>
           </div>
         ) : (
@@ -205,54 +305,86 @@ export default function Chat() {
             {(() => {
               const display = channelDisplay(activeChannel, user.id)
               return (
-                <div className="chat-thread-header">
-                  <Avatar name={display.name} color={display.color} />
+                <header className="chat-thread-header">
+                  <div className="chat-thread-header-avatar">
+                    <Avatar name={display.name} color={display.color} />
+                    {activeChannel.is_direct && <span className="presence-dot" />}
+                  </div>
                   <div className="chat-thread-header-main">
                     <div className="chat-thread-header-name">{display.name}</div>
                     <div className="chat-thread-header-sub">
-                      {activeChannel.is_direct
-                        ? 'Direct message'
-                        : `${activeChannel.members.length} members`}
+                      {activeChannel.is_direct ? (
+                        <><span className="dot-online" /> Active now</>
+                      ) : (
+                        <><Icon name="users" size={12} /> {activeChannel.members.length} members</>
+                      )}
                     </div>
                   </div>
-                </div>
+                </header>
               )
             })()}
 
             <div className="chat-messages">
-              {messages.map((m) => (
-                <div key={m.id} className={'chat-msg' + (m.sender_id === user.id ? ' mine' : '')}>
-                  <Avatar name={m.sender_name} color={m.sender_color} size="sm" />
-                  <div>
-                    <div className="chat-msg-meta">
-                      {m.sender_name} · {formatTime(m.created_at)}
-                    </div>
-                    <div className="chat-msg-body">
-                      <div className="chat-msg-text">{m.body}</div>
+              {grouped.map((g) =>
+                g.type === 'divider' ? (
+                  <div key={g.id} className="chat-day-divider">
+                    <span>{dayLabel(g.date)}</span>
+                  </div>
+                ) : (
+                  <div
+                    key={g.id}
+                    className={'chat-cluster' + (g.sender_id === user.id ? ' mine' : '')}
+                  >
+                    <Avatar name={g.sender_name} color={g.sender_color} size="sm" />
+                    <div className="chat-cluster-body">
+                      <div className="chat-cluster-meta">
+                        <span className="chat-cluster-name">{g.sender_name}</span>
+                        <span className="chat-cluster-time">{formatTime(g.messages[0].created_at)}</span>
+                      </div>
+                      <div className="chat-cluster-msgs">
+                        {g.messages.map((m) => (
+                          <div key={m.id} className="chat-bubble">
+                            {m.body}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="chat-typing">{typingText}</div>
+            <div className={'chat-typing' + (typingText ? ' active' : '')}>
+              {typingText && (
+                <>
+                  <span className="typing-dots"><span /><span /><span /></span>
+                  <span>{typingText}</span>
+                </>
+              )}
+            </div>
 
             <div className="chat-composer">
               <textarea
-                placeholder="Type a message. Press Enter to send, Shift+Enter for new line."
+                ref={composerRef}
+                placeholder="Type a message. Enter to send, Shift+Enter for new line."
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={onComposerKey}
                 rows={1}
               />
-              <button className="primary" onClick={sendMessage} disabled={!draft.trim()}>
-                Send
+              <button
+                className="primary chat-send"
+                onClick={sendMessage}
+                disabled={!draft.trim()}
+                aria-label="Send"
+              >
+                <Icon name="send" size={16} />
               </button>
             </div>
           </>
         )}
-      </div>
+      </section>
 
       {showNew && (
         <NewChannelModal
@@ -320,19 +452,33 @@ function NewChannelModal({ onClose, onCreated }) {
   return (
     <div className="new-channel-modal" onClick={onClose}>
       <div className="new-channel-card" onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: 0 }}>Start a conversation</h3>
-        {err && <div className="auth-error">{err}</div>}
-        <input
-          placeholder="Search people by name or email…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="new-channel-head">
+          <h3>Start a conversation</h3>
+          <button className="ghost new-channel-close" onClick={onClose} aria-label="Close">
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+        {err && (
+          <div className="auth-error">
+            <Icon name="close" size={14} /> {err}
+          </div>
+        )}
+        <div className="chat-search">
+          <Icon name="search" size={14} className="chat-search-icon" />
+          <input
+            placeholder="Search people by name or email…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
         <div className="new-channel-users">
           {users.length === 0 && (
-            <div style={{ padding: 12, color: 'var(--muted)', fontSize: 13 }}>No users found.</div>
+            <div style={{ padding: 16, color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
+              No users found.
+            </div>
           )}
           {users.map((u) => (
-            <div
+            <button
               key={u.id}
               className={'new-channel-user' + (selected.has(u.id) ? ' selected' : '')}
               onClick={() => toggle(u.id)}
@@ -342,8 +488,12 @@ function NewChannelModal({ onClose, onCreated }) {
                 {u.name}
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>{u.email}</div>
               </div>
-              {selected.has(u.id) && <span style={{ color: 'var(--primary)' }}>✓</span>}
-            </div>
+              {selected.has(u.id) && (
+                <span className="new-channel-user-check">
+                  <Icon name="check" size={14} />
+                </span>
+              )}
+            </button>
           ))}
         </div>
         {selected.size > 1 && (
@@ -356,7 +506,7 @@ function NewChannelModal({ onClose, onCreated }) {
         <div className="new-channel-actions">
           <button onClick={onClose}>Cancel</button>
           <button className="primary" onClick={create} disabled={busy || selected.size === 0}>
-            {busy ? 'Creating…' : 'Create'}
+            {busy ? 'Creating…' : `Create${selected.size ? ` (${selected.size})` : ''}`}
           </button>
         </div>
       </div>

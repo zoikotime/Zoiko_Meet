@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getWsBase } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import Icon from '../components/Icon'
 import './Meet.css'
 
 const ICE_SERVERS = [
@@ -429,9 +430,18 @@ export default function MeetRoom() {
   return (
     <div className="room">
       <div className="room-topbar">
-        <div className="room-title">Zoiko Meet</div>
-        <div className="room-code">{code}</div>
-        <span className="room-copy" onClick={copyInvite}>Copy invite</span>
+        <div className="room-topbar-brand">
+          <span className="room-topbar-brand-mark">Z</span>
+          <span>Zoiko Meet</span>
+        </div>
+        <div className="room-title" />
+        <div className="room-meta">
+          <span className="badge live">Live</span>
+          <span className="room-code">{code}</span>
+          <button className="ghost room-copy" onClick={copyInvite} title="Copy invite link">
+            <Icon name="copy" size={14} /> Copy
+          </button>
+        </div>
       </div>
 
       <div className="room-main">
@@ -444,11 +454,19 @@ export default function MeetRoom() {
                 <Avatar name={user.name} color={user.avatar_color} size="lg" />
               </div>
             )}
+            {handRaised && (
+              <div className="tile-hand" title="Hand raised">
+                <Icon name="hand" size={16} />
+              </div>
+            )}
             <div className="tile-name">
-              {handRaised && <span>✋</span>}
               <span>{user.name} (you){screenOn ? ' · sharing' : ''}</span>
             </div>
-            {!audioOn && <div className="tile-muted">Muted</div>}
+            {!audioOn && (
+              <div className="tile-muted" title="Muted">
+                <Icon name="micOff" size={14} />
+              </div>
+            )}
           </div>
 
           {peerList.map((p) => (
@@ -463,24 +481,29 @@ export default function MeetRoom() {
                 className={'room-sidebar-tab' + (sidebar === 'chat' ? ' active' : '')}
                 onClick={() => setSidebar('chat')}
               >
-                Chat
+                <Icon name="chat" size={14} /> Chat
               </button>
               <button
                 className={'room-sidebar-tab' + (sidebar === 'people' ? ' active' : '')}
                 onClick={() => setSidebar('people')}
               >
-                People ({tileCount})
+                <Icon name="users" size={14} /> People · {tileCount}
               </button>
-              <button className="room-sidebar-tab" onClick={() => setSidebar(null)} title="Close">
-                ✕
+              <button
+                className="room-sidebar-tab"
+                onClick={() => setSidebar(null)}
+                title="Close"
+                style={{ flex: '0 0 auto', width: 36 }}
+              >
+                <Icon name="close" size={14} />
               </button>
             </div>
             <div className="room-sidebar-body">
               {sidebar === 'chat' && (
                 <div className="room-chat-messages">
                   {chatMessages.length === 0 && (
-                    <div style={{ color: 'var(--muted)', fontSize: 13 }}>
-                      No messages yet. Say hi 👋
+                    <div style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
+                      No messages yet. Say hi!
                     </div>
                   )}
                   {chatMessages.map((m, i) => (
@@ -508,9 +531,9 @@ export default function MeetRoom() {
                     <Avatar name={user.name} color={user.avatar_color} size="sm" />
                     <div className="room-participant-name">{user.name} (you)</div>
                     <div className="room-participant-badge">
-                      {!audioOn && <span>🔇</span>}
-                      {!videoOn && <span>📷</span>}
-                      {handRaised && <span>✋</span>}
+                      {!audioOn && <span className="room-participant-badge muted" title="Muted"><Icon name="micOff" size={14} /></span>}
+                      {!videoOn && <span className="room-participant-badge muted" title="Camera off"><Icon name="cameraOff" size={14} /></span>}
+                      {handRaised && <span className="room-participant-badge hand" title="Hand raised"><Icon name="hand" size={14} /></span>}
                     </div>
                   </div>
                   {peerList.map((p) => (
@@ -518,9 +541,9 @@ export default function MeetRoom() {
                       <Avatar name={p.name} color={p.color} size="sm" />
                       <div className="room-participant-name">{p.name}</div>
                       <div className="room-participant-badge">
-                        {p.audio === false && <span>🔇</span>}
-                        {p.video === false && <span>📷</span>}
-                        {p.hand && <span>✋</span>}
+                        {p.audio === false && <span className="room-participant-badge muted" title="Muted"><Icon name="micOff" size={14} /></span>}
+                        {p.video === false && <span className="room-participant-badge muted" title="Camera off"><Icon name="cameraOff" size={14} /></span>}
+                        {p.hand && <span className="room-participant-badge hand" title="Hand raised"><Icon name="hand" size={14} /></span>}
                       </div>
                     </div>
                   ))}
@@ -537,8 +560,13 @@ export default function MeetRoom() {
                     if (e.key === 'Enter') { e.preventDefault(); sendChat() }
                   }}
                 />
-                <button className="primary" onClick={sendChat} disabled={!chatDraft.trim()}>
-                  Send
+                <button
+                  className="primary chat-send"
+                  onClick={sendChat}
+                  disabled={!chatDraft.trim()}
+                  aria-label="Send"
+                >
+                  <Icon name="send" size={16} />
                 </button>
               </div>
             )}
@@ -547,65 +575,85 @@ export default function MeetRoom() {
       </div>
 
       <div className="room-controls">
-        <button
-          className={'round-btn lg' + (audioOn ? '' : ' off')}
-          onClick={toggleAudio}
-          title={audioOn ? 'Mute' : 'Unmute'}
-        >
-          {audioOn ? '🎙️' : '🔇'}
-        </button>
-        <button
-          className={'round-btn lg' + (videoOn ? '' : ' off')}
-          onClick={toggleVideo}
-          title={videoOn ? 'Camera off' : 'Camera on'}
-        >
-          {videoOn ? '📹' : '📷'}
-        </button>
-        <button
-          className={'round-btn lg' + (screenOn ? ' primary' : '')}
-          onClick={screenOn ? stopScreenShare : startScreenShare}
-          title={screenOn ? 'Stop sharing' : 'Share screen'}
-        >
-          🖥️
-        </button>
-        <button
-          className={'round-btn lg' + (handRaised ? ' primary' : '')}
-          onClick={toggleHand}
-          title="Raise hand"
-        >
-          ✋
-        </button>
-        <button
-          className="round-btn lg"
-          onClick={() => setShowEmoji((v) => !v)}
-          title="Send reaction"
-        >
-          😀
-        </button>
-        {showEmoji && (
-          <div className="emoji-picker">
-            {['👍', '❤️', '😂', '🎉', '👏', '🙏', '🔥', '😮'].map((e) => (
-              <button key={e} onClick={() => sendReaction(e)}>{e}</button>
-            ))}
-          </div>
-        )}
-        <button
-          className={'round-btn lg' + (sidebar === 'chat' ? ' primary' : '')}
-          onClick={() => setSidebar((s) => (s === 'chat' ? null : 'chat'))}
-          title="Open chat"
-        >
-          💬
-        </button>
-        <button
-          className={'round-btn lg' + (sidebar === 'people' ? ' primary' : '')}
-          onClick={() => setSidebar((s) => (s === 'people' ? null : 'people'))}
-          title="Participants"
-        >
-          👥
-        </button>
-        <button className="round-btn lg leave" onClick={leave} title="Leave meeting">
-          ⏻
-        </button>
+        <div className="room-controls-group">
+          <button
+            className={'round-btn lg' + (audioOn ? '' : ' off')}
+            onClick={toggleAudio}
+            title={audioOn ? 'Mute' : 'Unmute'}
+            aria-label={audioOn ? 'Mute microphone' : 'Unmute microphone'}
+          >
+            <Icon name={audioOn ? 'mic' : 'micOff'} size={22} />
+          </button>
+          <button
+            className={'round-btn lg' + (videoOn ? '' : ' off')}
+            onClick={toggleVideo}
+            title={videoOn ? 'Camera off' : 'Camera on'}
+            aria-label={videoOn ? 'Turn camera off' : 'Turn camera on'}
+          >
+            <Icon name={videoOn ? 'camera' : 'cameraOff'} size={22} />
+          </button>
+          <button
+            className={'round-btn lg' + (screenOn ? ' active' : '')}
+            onClick={screenOn ? stopScreenShare : startScreenShare}
+            title={screenOn ? 'Stop sharing' : 'Share screen'}
+            aria-label={screenOn ? 'Stop screen share' : 'Start screen share'}
+          >
+            <Icon name="screen" size={22} />
+          </button>
+          <button
+            className={'round-btn lg' + (handRaised ? ' active' : '')}
+            onClick={toggleHand}
+            title={handRaised ? 'Lower hand' : 'Raise hand'}
+            aria-label="Raise hand"
+          >
+            <Icon name="hand" size={22} />
+          </button>
+          <button
+            className="round-btn lg"
+            onClick={() => setShowEmoji((v) => !v)}
+            title="Send reaction"
+            aria-label="Send reaction"
+          >
+            <Icon name="smile" size={22} />
+          </button>
+          {showEmoji && (
+            <div className="emoji-picker">
+              {['👍', '❤️', '😂', '🎉', '👏', '🙏', '🔥', '😮'].map((e) => (
+                <button key={e} onClick={() => sendReaction(e)}>{e}</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="room-controls-group">
+          <button
+            className={'round-btn lg' + (sidebar === 'chat' ? ' active' : '')}
+            onClick={() => setSidebar((s) => (s === 'chat' ? null : 'chat'))}
+            title="Open chat"
+            aria-label="Toggle chat"
+          >
+            <Icon name="chat" size={22} />
+          </button>
+          <button
+            className={'round-btn lg' + (sidebar === 'people' ? ' active' : '')}
+            onClick={() => setSidebar((s) => (s === 'people' ? null : 'people'))}
+            title="Participants"
+            aria-label="Toggle participants"
+          >
+            <Icon name="users" size={22} />
+          </button>
+        </div>
+
+        <div className="room-controls-group">
+          <button
+            className="round-btn lg leave"
+            onClick={leave}
+            title="Leave meeting"
+            aria-label="Leave meeting"
+          >
+            <Icon name="hangup" size={22} />
+          </button>
+        </div>
       </div>
 
       <div className="reaction-overlay">
@@ -634,14 +682,22 @@ function PeerTile({ peer }) {
         <video ref={videoRef} autoPlay playsInline />
       ) : (
         <div className="tile-placeholder">
-          <Avatar name={peer.name || '?'} color={peer.color || '#5b8def'} size="lg" />
+          <Avatar name={peer.name || '?'} color={peer.color || '#7c8cff'} size="lg" />
+        </div>
+      )}
+      {peer.hand && (
+        <div className="tile-hand" title="Hand raised">
+          <Icon name="hand" size={16} />
         </div>
       )}
       <div className="tile-name">
-        {peer.hand && <span>✋</span>}
         <span>{peer.name || '...'}{peer.screen ? ' · sharing' : ''}</span>
       </div>
-      {audioOff && <div className="tile-muted">Muted</div>}
+      {audioOff && (
+        <div className="tile-muted" title="Muted">
+          <Icon name="micOff" size={14} />
+        </div>
+      )}
     </div>
   )
 }

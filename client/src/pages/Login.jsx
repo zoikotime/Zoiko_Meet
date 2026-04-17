@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
 import './Auth.css'
+
+const FEATURES = [
+  { icon: 'video', title: 'HD video meetings', desc: 'One-click rooms with screen sharing.' },
+  { icon: 'chat', title: 'Team chat', desc: 'Channels, DMs and realtime messages.' },
+  { icon: 'link', title: 'Share a link', desc: 'Invite anyone with a meeting code.' },
+  { icon: 'shield', title: 'Peer-to-peer', desc: 'Direct streams, low latency.' },
+]
 
 export default function Login() {
   const { login } = useAuth()
@@ -27,17 +35,43 @@ export default function Login() {
 
   return (
     <div className="auth-wrap">
-      <div className="auth-pane">
-        <div className="auth-card">
-          <div className="auth-brand">
-            <span className="auth-brand-mark">Z</span>
+      <div className="auth-grid" />
+      <div className="auth-orb-3" />
+      <div className="auth-shell">
+        <section className="auth-hero">
+          <div className="auth-hero-logo">
+            <span className="auth-hero-logo-mark">Z</span>
             <span>Zoiko Meet</span>
           </div>
+          <h1>
+            Meetings and chat,<br />
+            <span className="grad">beautifully together.</span>
+          </h1>
+          <p className="auth-hero-sub">
+            Jump into a video call or pick up a conversation with your team — no context
+            switching, no extra apps.
+          </p>
+          <div className="auth-hero-features">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="auth-feature">
+                <div className="auth-feature-icon"><Icon name={f.icon} size={18} /></div>
+                <div className="auth-feature-title">{f.title}</div>
+                <div className="auth-feature-desc">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="auth-card">
           <h1 className="auth-title">Welcome back</h1>
           <p className="auth-sub">Sign in to join meetings and chat with your team.</p>
-          {error && <div className="auth-error">{error}</div>}
+          {error && (
+            <div className="auth-error">
+              <Icon name="close" size={14} /> {error}
+            </div>
+          )}
           <form className="auth-form" onSubmit={submit}>
-            <div>
+            <div className="auth-field">
               <label className="auth-label">Email</label>
               <input
                 type="email"
@@ -48,7 +82,7 @@ export default function Login() {
                 placeholder="you@example.com"
               />
             </div>
-            <div>
+            <div className="auth-field">
               <label className="auth-label">Password</label>
               <input
                 type="password"
@@ -58,45 +92,15 @@ export default function Login() {
                 placeholder="••••••••"
               />
             </div>
-            <button type="submit" className="primary" disabled={busy}>
+            <button type="submit" className="primary auth-submit" disabled={busy}>
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            New here? <Link to="/register">Create an account</Link>
+          <div className="auth-divider">New here</div>
+          <div className="auth-footer">
+            <Link to="/register">Create your account →</Link>
           </div>
-        </div>
-      </div>
-      <div className="auth-pane auth-hero">
-        <div className="auth-hero-content">
-          <h2>Meetings + chat, all in one place.</h2>
-          <p>
-            Quickly start a video meeting or pick up a conversation with your team — no
-            context switching, no extra apps.
-          </p>
-          <div className="auth-features">
-            <div className="auth-feature">
-              <div className="auth-feature-icon">📹</div>
-              <div className="auth-feature-title">HD Video Meetings</div>
-              <div className="auth-feature-desc">One-click rooms with screen sharing.</div>
-            </div>
-            <div className="auth-feature">
-              <div className="auth-feature-icon">💬</div>
-              <div className="auth-feature-title">Team Chat</div>
-              <div className="auth-feature-desc">Channels and direct messages.</div>
-            </div>
-            <div className="auth-feature">
-              <div className="auth-feature-icon">🔗</div>
-              <div className="auth-feature-title">Share a link</div>
-              <div className="auth-feature-desc">Invite anyone with a meeting code.</div>
-            </div>
-            <div className="auth-feature">
-              <div className="auth-feature-icon">🔒</div>
-              <div className="auth-feature-title">Secure</div>
-              <div className="auth-feature-desc">Peer-to-peer video streams.</div>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   )
