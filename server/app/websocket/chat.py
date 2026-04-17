@@ -1,10 +1,12 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from datetime import datetime, timezone as tz
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.core.deps import get_user_from_token
-from app.models.chat import ChannelMember, Message
+from app.models.chat import Channel, ChannelMember, Message, MessageReaction, MessageReadReceipt
 from app.models.user import User
 from app.websocket.manager import chat_manager
 
@@ -42,14 +44,39 @@ async def channel_ws(websocket: WebSocket, channel_id: int, token: str = ""):
             while True:
                 data = await websocket.receive_json()
                 kind = data.get("type")
+
+                # Refresh membership for mute checks
+                db.refresh(membership)
+
                 if kind == "message":
+                    if membership.is_muted:
+                        await websocket.send_json({"type": "error", "message": "You are muted in this channel"})
+                        continue
                     body = (data.get("body") or "").strip()
                     if not body:
                         continue
-                    msg = Message(channel_id=channel_id, sender_id=user.id, body=body[:4000])
+                    reply_to_id = data.get("reply_to_id")
+                    if reply_to_id:
+                        parent = db.get(Message, reply_to_id)
+                        if not parent or parent.channel_id != channel_id:
+                            reply_to_id = None
+
+                    msg = Message(
+                        channel_id=channel_id,
+                        sender_id=user.id,
+                        body=body[:4000],
+                        reply_to_id=reply_to_id,
+                    )
                     db.add(msg)
                     db.commit()
                     db.refresh(msg)
+
+                    reply_preview = None
+                    if msg.reply_to_id:
+                        parent = db.get(Message, msg.reply_to_id)
+                        if parent and not parent.deleted_at:
+                            reply_preview = parent.body[:120]
+
                     payload = {
                         "type": "message",
                         "message": {
@@ -60,15 +87,109 @@ async def channel_ws(websocket: WebSocket, channel_id: int, token: str = ""):
                             "sender_color": user.avatar_color,
                             "body": msg.body,
                             "created_at": msg.created_at.isoformat(),
+                            "deleted_at": None,
+                            "reply_to_id": msg.reply_to_id,
+                            "reply_preview": reply_preview,
+                            "file_url": None,
+                            "file_name": None,
+                            "file_type": None,
+                            "file_size": None,
+                            "reactions": [],
                         },
                     }
                     await chat_manager.broadcast(room, payload)
+
                 elif kind == "typing":
+                    if membership.is_muted:
+                        continue
                     await chat_manager.broadcast(
                         room,
                         {"type": "typing", "user_id": user.id, "name": user.name},
                         exclude=websocket,
                     )
+
+                elif kind == "reaction":
+                    message_id = data.get("message_id")
+                    emoji = (data.get("emoji") or "").strip()
+                    if not message_id or not emoji:
+                        continue
+                    msg = db.get(Message, message_id)
+                    if not msg or msg.channel_id != channel_id or msg.deleted_at:
+                        continue
+
+                    existing = db.scalar(
+                        select(MessageReaction).where(
+                            MessageReaction.message_id == message_id,
+                            MessageReaction.user_id == user.id,
+                            MessageReaction.emoji == emoji,
+                        )
+                    )
+                    if existing:
+                        db.delete(existing)
+                        db.commit()
+                        action = "removed"
+                    else:
+                        db.add(MessageReaction(message_id=message_id, user_id=user.id, emoji=emoji))
+                        db.commit()
+                        action = "added"
+
+                    await chat_manager.broadcast(room, {
+                        "type": "reaction",
+                        "message_id": message_id,
+                        "emoji": emoji,
+                        "user_id": user.id,
+                        "user_name": user.name,
+                        "action": action,
+                    })
+
+                elif kind == "delete":
+                    message_id = data.get("message_id")
+                    if not message_id:
+                        continue
+                    msg = db.get(Message, message_id)
+                    if not msg or msg.channel_id != channel_id or msg.deleted_at:
+                        continue
+                    channel = db.get(Channel, channel_id)
+                    if msg.sender_id != user.id and (not channel or channel.created_by != user.id):
+                        await websocket.send_json({"type": "error", "message": "Cannot delete this message"})
+                        continue
+                    msg.deleted_at = datetime.now(tz.utc)
+                    db.commit()
+                    await chat_manager.broadcast(room, {
+                        "type": "message_deleted",
+                        "message_id": message_id,
+                        "deleted_by": user.id,
+                    })
+
+                elif kind == "read":
+                    last_read_id = data.get("last_read_message_id")
+                    if not last_read_id:
+                        continue
+                    receipt = db.scalar(
+                        select(MessageReadReceipt).where(
+                            MessageReadReceipt.channel_id == channel_id,
+                            MessageReadReceipt.user_id == user.id,
+                        )
+                    )
+                    if receipt:
+                        if last_read_id > receipt.last_read_message_id:
+                            receipt.last_read_message_id = last_read_id
+                            receipt.read_at = datetime.now(tz.utc)
+                    else:
+                        receipt = MessageReadReceipt(
+                            channel_id=channel_id,
+                            user_id=user.id,
+                            last_read_message_id=last_read_id,
+                        )
+                        db.add(receipt)
+                    db.commit()
+                    await chat_manager.broadcast(room, {
+                        "type": "read_receipt",
+                        "user_id": user.id,
+                        "user_name": user.name,
+                        "last_read_message_id": last_read_id,
+                    }, exclude=websocket)
+
         except WebSocketDisconnect:
             pass
         finally:

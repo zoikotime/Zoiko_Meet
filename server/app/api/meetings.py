@@ -3,14 +3,35 @@ import string
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, and_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.meeting import Meeting, MeetingParticipant
+from app.core.security import hash_password, verify_password
+from app.models.meeting import (
+    Meeting,
+    MeetingParticipant,
+    ROLE_HOST,
+    ROLE_COHOST,
+    ROLE_PARTICIPANT,
+    STATUS_PENDING,
+    STATUS_ADMITTED,
+    STATUS_DISCONNECTED,
+    STATUS_DENIED,
+    STATUS_KICKED,
+    STATUS_LEFT,
+)
 from app.models.user import User
-from app.schemas.meeting import MeetingCreate, MeetingOut
+from app.schemas.meeting import (
+    MeetingCreate,
+    MeetingUpdate,
+    MeetingOut,
+    ParticipantOut,
+    MeetingRoster,
+    JoinMeetingIn,
+    ParticipantActionIn,
+)
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -25,6 +46,49 @@ def _generate_code() -> str:
     return "-".join(groups)
 
 
+def _meeting_out(meeting: Meeting) -> dict:
+    """Convert a Meeting to MeetingOut-compatible dict with password_protected."""
+    return {
+        "id": meeting.id,
+        "code": meeting.code,
+        "title": meeting.title,
+        "host_id": meeting.host_id,
+        "is_active": meeting.is_active,
+        "scheduled_at": meeting.scheduled_at,
+        "timezone_name": meeting.timezone_name,
+        "waiting_room_enabled": meeting.waiting_room_enabled,
+        "locked": meeting.locked,
+        "password_protected": meeting.password_hash is not None,
+        "created_at": meeting.created_at,
+        "ended_at": meeting.ended_at,
+    }
+
+
+def _get_meeting_or_404(code: str, db: Session) -> Meeting:
+    meeting = db.scalar(select(Meeting).where(Meeting.code == code))
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    return meeting
+
+
+def _require_host_or_cohost(meeting: Meeting, user: User, db: Session) -> MeetingParticipant | None:
+    """Return the caller's participant row if they are host or co-host, else 403."""
+    if meeting.host_id == user.id:
+        return None  # creator is always host even without a participant row
+    participant = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == user.id,
+            MeetingParticipant.role == ROLE_COHOST,
+        )
+    )
+    if not participant:
+        raise HTTPException(status_code=403, detail="Only the host or co-host can perform this action")
+    return participant
+
+
+# ── Create ──────────────────────────────────────────────────────────────────
+
 @router.post("", response_model=MeetingOut, status_code=201)
 def create_meeting(
     data: MeetingCreate,
@@ -37,12 +101,22 @@ def create_meeting(
             break
     else:
         raise HTTPException(status_code=500, detail="Could not allocate meeting code")
-    meeting = Meeting(code=code, title=data.title or "Instant meeting", host_id=user.id)
+    meeting = Meeting(
+        code=code,
+        title=data.title or "Instant meeting",
+        host_id=user.id,
+        scheduled_at=data.scheduled_at,
+        timezone_name=data.timezone_name,
+        waiting_room_enabled=data.waiting_room_enabled,
+        password_hash=hash_password(data.password) if data.password else None,
+    )
     db.add(meeting)
     db.commit()
     db.refresh(meeting)
-    return meeting
+    return _meeting_out(meeting)
 
+
+# ── Read ────────────────────────────────────────────────────────────────────
 
 @router.get("/recent", response_model=list[MeetingOut])
 def recent_meetings(
@@ -54,7 +128,7 @@ def recent_meetings(
         .order_by(desc(Meeting.created_at))
         .limit(10)
     )
-    return db.scalars(stmt).all()
+    return [_meeting_out(m) for m in db.scalars(stmt).all()]
 
 
 @router.get("/{code}", response_model=MeetingOut)
@@ -63,11 +137,28 @@ def get_meeting(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    meeting = db.scalar(select(Meeting).where(Meeting.code == code))
-    if not meeting:
-        raise HTTPException(status_code=404, detail="Meeting not found")
-    return meeting
+    return _meeting_out(_get_meeting_or_404(code, db))
 
+
+# ── Update ──────────────────────────────────────────────────────────────────
+
+@router.patch("/{code}", response_model=MeetingOut)
+def update_meeting(
+    code: str,
+    data: MeetingUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    _require_host_or_cohost(meeting, user, db)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(meeting, field, value)
+    db.commit()
+    db.refresh(meeting)
+    return _meeting_out(meeting)
+
+
+# ── End ─────────────────────────────────────────────────────────────────────
 
 @router.post("/{code}/end", response_model=MeetingOut)
 def end_meeting(
@@ -75,13 +166,223 @@ def end_meeting(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    meeting = db.scalar(select(Meeting).where(Meeting.code == code))
-    if not meeting:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+    meeting = _get_meeting_or_404(code, db)
     if meeting.host_id != user.id:
         raise HTTPException(status_code=403, detail="Only host can end the meeting")
     meeting.is_active = False
     meeting.ended_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(meeting)
-    return meeting
+    return _meeting_out(meeting)
+
+
+# ── Join (waiting-room aware) ───────────────────────────────────────────────
+
+@router.post("/{code}/join", response_model=ParticipantOut, status_code=200)
+def join_meeting(
+    code: str,
+    data: JoinMeetingIn | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+
+    if not meeting.is_active:
+        raise HTTPException(status_code=410, detail="Meeting has ended")
+
+    if meeting.locked and meeting.host_id != user.id:
+        raise HTTPException(status_code=403, detail="Meeting is locked")
+
+    # Meeting password check (host is exempt)
+    if meeting.password_hash and meeting.host_id != user.id:
+        provided = data.password if data else None
+        if not provided or not verify_password(provided, meeting.password_hash):
+            raise HTTPException(status_code=403, detail="Incorrect meeting password")
+
+    # Check for existing participant row (reconnection)
+    existing = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == user.id,
+        )
+    )
+
+    if existing:
+        if existing.status in (STATUS_DENIED, STATUS_KICKED):
+            raise HTTPException(status_code=403, detail="You have been removed from this meeting")
+        if existing.status in (STATUS_ADMITTED, STATUS_DISCONNECTED):
+            # Reconnect: mark admitted again
+            existing.status = STATUS_ADMITTED
+            existing.last_seen_at = datetime.now(timezone.utc)
+            existing.left_at = None
+            db.commit()
+            db.refresh(existing)
+            return existing
+        if existing.status == STATUS_LEFT:
+            # Re-joining after voluntarily leaving — treat like new join
+            existing.status = STATUS_PENDING if meeting.waiting_room_enabled and meeting.host_id != user.id else STATUS_ADMITTED
+            existing.last_seen_at = datetime.now(timezone.utc)
+            existing.left_at = None
+            db.commit()
+            db.refresh(existing)
+            return existing
+        # STATUS_PENDING — still waiting
+        return existing
+
+    # New participant
+    is_host = meeting.host_id == user.id
+    status = STATUS_ADMITTED if is_host or not meeting.waiting_room_enabled else STATUS_PENDING
+    role = ROLE_HOST if is_host else ROLE_PARTICIPANT
+
+    participant = MeetingParticipant(
+        meeting_id=meeting.id,
+        user_id=user.id,
+        role=role,
+        status=status,
+    )
+    db.add(participant)
+    db.commit()
+    db.refresh(participant)
+    return participant
+
+
+# ── Roster (participants list) ──────────────────────────────────────────────
+
+@router.get("/{code}/participants", response_model=MeetingRoster)
+def get_participants(
+    code: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    participants = db.scalars(
+        select(MeetingParticipant).where(MeetingParticipant.meeting_id == meeting.id)
+    ).all()
+
+    roster = []
+    for p in participants:
+        u = db.get(User, p.user_id)
+        roster.append({
+            "id": p.id,
+            "user_id": p.user_id,
+            "name": u.name if u else "Unknown",
+            "avatar_color": u.avatar_color if u else "#5b8def",
+            "role": p.role,
+            "status": p.status,
+            "joined_at": p.joined_at.isoformat() if p.joined_at else None,
+            "left_at": p.left_at.isoformat() if p.left_at else None,
+        })
+
+    return MeetingRoster(meeting=meeting, participants=roster)
+
+
+# ── Host actions: admit / deny / kick / promote ────────────────────────────
+
+@router.post("/{code}/admit", response_model=ParticipantOut)
+def admit_participant(
+    code: str,
+    data: ParticipantActionIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    _require_host_or_cohost(meeting, user, db)
+
+    participant = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == data.user_id,
+            MeetingParticipant.status == STATUS_PENDING,
+        )
+    )
+    if not participant:
+        raise HTTPException(status_code=404, detail="No pending participant found")
+
+    participant.status = STATUS_ADMITTED
+    participant.last_seen_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(participant)
+    return participant
+
+
+@router.post("/{code}/deny", response_model=ParticipantOut)
+def deny_participant(
+    code: str,
+    data: ParticipantActionIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    _require_host_or_cohost(meeting, user, db)
+
+    participant = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == data.user_id,
+            MeetingParticipant.status == STATUS_PENDING,
+        )
+    )
+    if not participant:
+        raise HTTPException(status_code=404, detail="No pending participant found")
+
+    participant.status = STATUS_DENIED
+    db.commit()
+    db.refresh(participant)
+    return participant
+
+
+@router.post("/{code}/kick", response_model=ParticipantOut)
+def kick_participant(
+    code: str,
+    data: ParticipantActionIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    _require_host_or_cohost(meeting, user, db)
+
+    if data.user_id == meeting.host_id:
+        raise HTTPException(status_code=403, detail="Cannot kick the host")
+
+    participant = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == data.user_id,
+            MeetingParticipant.status == STATUS_ADMITTED,
+        )
+    )
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found or not admitted")
+
+    participant.status = STATUS_KICKED
+    participant.left_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(participant)
+    return participant
+
+
+@router.post("/{code}/promote", response_model=ParticipantOut)
+def promote_participant(
+    code: str,
+    data: ParticipantActionIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    meeting = _get_meeting_or_404(code, db)
+    if meeting.host_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the host can promote participants")
+
+    participant = db.scalar(
+        select(MeetingParticipant).where(
+            MeetingParticipant.meeting_id == meeting.id,
+            MeetingParticipant.user_id == data.user_id,
+            MeetingParticipant.status == STATUS_ADMITTED,
+        )
+    )
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found or not admitted")
+
+    participant.role = ROLE_COHOST if participant.role == ROLE_PARTICIPANT else ROLE_PARTICIPANT
+    db.commit()
+    db.refresh(participant)
+    return participant

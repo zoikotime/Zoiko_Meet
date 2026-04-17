@@ -23,8 +23,12 @@ export default function Register() {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Password must contain uppercase, lowercase, and a digit')
       return
     }
     setBusy(true)
@@ -102,8 +106,8 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
-                placeholder="At least 6 characters"
+                minLength={8}
+                placeholder="At least 8 characters (A-z, 0-9)"
               />
             </div>
             <button type="submit" className="primary auth-submit" disabled={busy}>

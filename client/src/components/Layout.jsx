@@ -2,12 +2,14 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import Icon from './Icon'
+import NotificationBell from './NotificationBell'
 import './Layout.css'
 
 const NAV = [
   { to: '/', label: 'Home', icon: 'home', end: true },
   { to: '/chat', label: 'Chat', icon: 'chat' },
   { to: '/meet', label: 'Meet', icon: 'video' },
+  { to: '/dashboard', label: 'Dashboard', icon: 'chart' },
 ]
 
 export default function Layout() {
@@ -47,6 +49,10 @@ export default function Layout() {
 
         <div className="side-footer">
           {user && (
+            <>
+            <div className="side-notif-row">
+              <NotificationBell />
+            </div>
             <div className="side-user" title={user.email}>
               <div className="side-user-avatar">
                 <Avatar name={user.name} color={user.avatar_color} size="sm" />
@@ -65,6 +71,7 @@ export default function Layout() {
                 <Icon name="logout" size={16} />
               </button>
             </div>
+            </>
           )}
         </div>
       </aside>

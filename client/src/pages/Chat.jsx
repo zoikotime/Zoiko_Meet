@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, getWsBase } from '../api/client'
+import { api, getApiBase, getWsBase, uploadFile } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
 import './Chat.css'
+
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉', '🔥', '👏']
 
 function formatTime(iso) {
   try {
@@ -36,15 +38,22 @@ function dayLabel(iso) {
 function channelDisplay(channel, currentUserId) {
   if (channel.is_direct) {
     const other = channel.members.find((m) => m.id !== currentUserId)
-    return {
-      name: other?.name || channel.name,
-      color: other?.avatar_color || '#5b8def',
-    }
+    return { name: other?.name || channel.name, color: other?.avatar_color || '#5b8def' }
   }
   return { name: channel.name, color: '#7c8cff' }
 }
 
-// Group messages by day and collapse consecutive sends from same author within 3min
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function isImageType(type) {
+  return type && type.startsWith('image/')
+}
+
 function groupMessages(messages) {
   const groups = []
   let currentDay = null
@@ -59,7 +68,8 @@ function groupMessages(messages) {
     const lastCluster = currentCluster
     const sameAuthor = lastCluster && lastCluster.sender_id === m.sender_id
     const closeInTime =
-      lastCluster && new Date(m.created_at) - new Date(lastCluster.messages[lastCluster.messages.length - 1].created_at) < 3 * 60 * 1000
+      lastCluster &&
+      new Date(m.created_at) - new Date(lastCluster.messages[lastCluster.messages.length - 1].created_at) < 3 * 60 * 1000
     if (sameAuthor && closeInTime) {
       lastCluster.messages.push(m)
     } else {
@@ -90,9 +100,14 @@ export default function Chat() {
   const [typingUsers, setTypingUsers] = useState({})
   const [showNew, setShowNew] = useState(false)
   const [search, setSearch] = useState('')
+  const [replyTo, setReplyTo] = useState(null)
+  const [emojiPicker, setEmojiPicker] = useState(null) // message id
+  const [readReceipts, setReadReceipts] = useState({}) // { oderId: lastReadMsgId }
+  const [uploading, setUploading] = useState(false)
   const wsRef = useRef(null)
   const messagesEndRef = useRef(null)
   const composerRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const loadChannels = useCallback(async () => {
     const list = await api('/api/channels')
@@ -122,11 +137,20 @@ export default function Chat() {
         if (!cancelled) setMessages(msgs)
       })
       .catch(() => {})
-    return () => {
-      cancelled = true
-    }
+    // Load read receipts
+    api(`/api/channels/${channelId}/read-receipts`)
+      .then((receipts) => {
+        if (!cancelled) {
+          const map = {}
+          for (const r of receipts) map[r.user_id] = r.last_read_message_id
+          setReadReceipts(map)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
   }, [channelId])
 
+  // WebSocket connection
   useEffect(() => {
     if (!channelId) return
     if (wsRef.current) {
@@ -145,16 +169,35 @@ export default function Chat() {
           setChannels((prev) =>
             prev.map((c) =>
               c.id === data.message.channel_id
-                ? {
-                    ...c,
-                    last_message_preview: data.message.body.slice(0, 120),
-                    last_message_at: data.message.created_at,
-                  }
+                ? { ...c, last_message_preview: data.message.body.slice(0, 120), last_message_at: data.message.created_at }
                 : c
             )
           )
         } else if (data.type === 'typing') {
           setTypingUsers((prev) => ({ ...prev, [data.user_id]: { name: data.name, at: Date.now() } }))
+        } else if (data.type === 'reaction') {
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id !== data.message_id) return m
+              let reactions = [...(m.reactions || [])]
+              if (data.action === 'added') {
+                reactions.push({ emoji: data.emoji, user_id: data.user_id, user_name: data.user_name })
+              } else {
+                reactions = reactions.filter(
+                  (r) => !(r.emoji === data.emoji && r.user_id === data.user_id)
+                )
+              }
+              return { ...m, reactions }
+            })
+          )
+        } else if (data.type === 'message_deleted') {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === data.message_id ? { ...m, deleted_at: new Date().toISOString() } : m
+            )
+          )
+        } else if (data.type === 'read_receipt') {
+          setReadReceipts((prev) => ({ ...prev, [data.user_id]: data.last_read_message_id }))
         }
       } catch {}
     }
@@ -162,6 +205,15 @@ export default function Chat() {
       try { ws.close() } catch {}
     }
   }, [channelId])
+
+  // Mark as read when messages change
+  useEffect(() => {
+    if (!messages.length || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg && lastMsg.sender_id !== user?.id) {
+      wsRef.current.send(JSON.stringify({ type: 'read', last_read_message_id: lastMsg.id }))
+    }
+  }, [messages, user?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -192,16 +244,47 @@ export default function Chat() {
   const sendMessage = () => {
     const body = draft.trim()
     if (!body || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
-    wsRef.current.send(JSON.stringify({ type: 'message', body }))
+    const payload = { type: 'message', body }
+    if (replyTo) payload.reply_to_id = replyTo.id
+    wsRef.current.send(JSON.stringify(payload))
     setDraft('')
+    setReplyTo(null)
   }
 
   const onComposerKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
+    } else if (e.key === 'Escape' && replyTo) {
+      setReplyTo(null)
     } else if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'typing' }))
+    }
+  }
+
+  const toggleReaction = (messageId, emoji) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    wsRef.current.send(JSON.stringify({ type: 'reaction', message_id: messageId, emoji }))
+    setEmojiPicker(null)
+  }
+
+  const deleteMessage = (messageId) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    wsRef.current.send(JSON.stringify({ type: 'delete', message_id: messageId }))
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !channelId) return
+    setUploading(true)
+    try {
+      const msg = await uploadFile(`/api/channels/${channelId}/upload`, file)
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+    } catch (err) {
+      alert(err.message || 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -227,27 +310,34 @@ export default function Chat() {
 
   const grouped = useMemo(() => groupMessages(messages), [messages])
 
+  // Compute which users have read up to which point
+  const readByPerMessage = useMemo(() => {
+    const map = {}
+    if (!activeChannel) return map
+    for (const [uid, lastReadId] of Object.entries(readReceipts)) {
+      const userId = Number(uid)
+      if (userId === user?.id) continue
+      const member = activeChannel.members?.find((m) => m.id === userId)
+      if (!member) continue
+      if (!map[lastReadId]) map[lastReadId] = []
+      map[lastReadId].push(member.name)
+    }
+    return map
+  }, [readReceipts, activeChannel, user?.id])
+
   return (
     <div className="chat">
       <aside className="chat-list">
         <div className="chat-list-header">
           <div className="chat-list-title">Chat</div>
-          <button
-            className="primary sm chat-new-btn"
-            onClick={() => setShowNew(true)}
-            aria-label="New conversation"
-          >
+          <button className="primary sm chat-new-btn" onClick={() => setShowNew(true)} aria-label="New conversation">
             <Icon name="plus" size={14} /> New
           </button>
         </div>
 
         <div className="chat-search">
           <Icon name="search" size={14} className="chat-search-icon" />
-          <input
-            placeholder="Search conversations…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <input placeholder="Search conversations…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         <div className="chat-list-items">
@@ -262,11 +352,7 @@ export default function Chat() {
             const display = channelDisplay(c, user.id)
             const active = String(c.id) === String(channelId)
             return (
-              <button
-                key={c.id}
-                className={'chat-list-item' + (active ? ' active' : '')}
-                onClick={() => navigate(`/chat/${c.id}`)}
-              >
+              <button key={c.id} className={'chat-list-item' + (active ? ' active' : '')} onClick={() => navigate(`/chat/${c.id}`)}>
                 <div className="chat-list-item-avatar">
                   <Avatar name={display.name} color={display.color} />
                   {c.is_direct && <span className="presence-dot" />}
@@ -274,9 +360,10 @@ export default function Chat() {
                 <div className="chat-list-item-main">
                   <div className="chat-list-item-top">
                     <span className="chat-list-item-name">{display.name}</span>
-                    {c.last_message_at && (
-                      <span className="chat-list-item-time">{formatTime(c.last_message_at)}</span>
-                    )}
+                    <div className="chat-list-item-meta">
+                      {c.unread_count > 0 && <span className="chat-unread-badge">{c.unread_count}</span>}
+                      {c.last_message_at && <span className="chat-list-item-time">{formatTime(c.last_message_at)}</span>}
+                    </div>
                   </div>
                   <div className="chat-list-item-preview">
                     {c.last_message_preview || (c.is_direct ? 'Start a conversation' : 'No messages yet')}
@@ -324,17 +411,12 @@ export default function Chat() {
               )
             })()}
 
-            <div className="chat-messages">
+            <div className="chat-messages" onClick={() => setEmojiPicker(null)}>
               {grouped.map((g) =>
                 g.type === 'divider' ? (
-                  <div key={g.id} className="chat-day-divider">
-                    <span>{dayLabel(g.date)}</span>
-                  </div>
+                  <div key={g.id} className="chat-day-divider"><span>{dayLabel(g.date)}</span></div>
                 ) : (
-                  <div
-                    key={g.id}
-                    className={'chat-cluster' + (g.sender_id === user.id ? ' mine' : '')}
-                  >
+                  <div key={g.id} className={'chat-cluster' + (g.sender_id === user.id ? ' mine' : '')}>
                     <Avatar name={g.sender_name} color={g.sender_color} size="sm" />
                     <div className="chat-cluster-body">
                       <div className="chat-cluster-meta">
@@ -343,9 +425,18 @@ export default function Chat() {
                       </div>
                       <div className="chat-cluster-msgs">
                         {g.messages.map((m) => (
-                          <div key={m.id} className="chat-bubble">
-                            {m.body}
-                          </div>
+                          <MessageBubble
+                            key={m.id}
+                            msg={m}
+                            isMine={m.sender_id === user.id}
+                            isChannelCreator={activeChannel.members?.find(mem => mem.id === user.id) && activeChannel.created_by === user?.id}
+                            onReply={() => { setReplyTo(m); composerRef.current?.focus() }}
+                            onReact={(emoji) => toggleReaction(m.id, emoji)}
+                            onDelete={() => deleteMessage(m.id)}
+                            emojiPickerOpen={emojiPicker === m.id}
+                            onToggleEmojiPicker={(e) => { e.stopPropagation(); setEmojiPicker(emojiPicker === m.id ? null : m.id) }}
+                            readBy={readByPerMessage[m.id]}
+                          />
                         ))}
                       </div>
                     </div>
@@ -364,7 +455,34 @@ export default function Chat() {
               )}
             </div>
 
+            {replyTo && (
+              <div className="chat-reply-bar">
+                <Icon name="reply" size={14} />
+                <span className="chat-reply-bar-text">
+                  Replying to <strong>{replyTo.sender_name}</strong>: {replyTo.body?.slice(0, 80)}
+                </span>
+                <button className="ghost chat-reply-bar-close" onClick={() => setReplyTo(null)}>
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+            )}
+
             <div className="chat-composer">
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept=".png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.json,.md"
+                onChange={handleFileUpload}
+              />
+              <button
+                className="ghost chat-composer-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                title="Attach file"
+              >
+                {uploading ? <div className="spinner-sm" /> : <Icon name="attach" size={18} />}
+              </button>
               <textarea
                 ref={composerRef}
                 placeholder="Type a message. Enter to send, Shift+Enter for new line."
@@ -373,12 +491,7 @@ export default function Chat() {
                 onKeyDown={onComposerKey}
                 rows={1}
               />
-              <button
-                className="primary chat-send"
-                onClick={sendMessage}
-                disabled={!draft.trim()}
-                aria-label="Send"
-              >
+              <button className="primary chat-send" onClick={sendMessage} disabled={!draft.trim()} aria-label="Send">
                 <Icon name="send" size={16} />
               </button>
             </div>
@@ -399,6 +512,107 @@ export default function Chat() {
     </div>
   )
 }
+
+// ── Message Bubble ──────────────────────────────────────────────────────
+
+function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDelete, emojiPickerOpen, onToggleEmojiPicker, readBy }) {
+  if (msg.deleted_at) {
+    return (
+      <div className="chat-bubble deleted">
+        <Icon name="trash" size={13} />
+        <em>This message was deleted</em>
+      </div>
+    )
+  }
+
+  const hasFile = !!msg.file_url
+  const isImage = hasFile && isImageType(msg.file_type)
+
+  // Group reactions by emoji
+  const reactionGroups = useMemo(() => {
+    const groups = {}
+    for (const r of (msg.reactions || [])) {
+      if (!groups[r.emoji]) groups[r.emoji] = []
+      groups[r.emoji].push(r)
+    }
+    return groups
+  }, [msg.reactions])
+
+  return (
+    <div className="chat-bubble-wrap">
+      {msg.reply_to_id && msg.reply_preview && (
+        <div className="chat-reply-ref">
+          <Icon name="reply" size={12} />
+          <span>{msg.reply_preview}</span>
+        </div>
+      )}
+
+      <div className={'chat-bubble' + (hasFile && !msg.body?.trim() ? ' file-only' : '')}>
+        {hasFile && isImage && (
+          <a href={`${getApiBase()}${msg.file_url}`} target="_blank" rel="noopener noreferrer" className="chat-file-image">
+            <img src={`${getApiBase()}${msg.file_url}`} alt={msg.file_name} />
+          </a>
+        )}
+        {hasFile && !isImage && (
+          <a href={`${getApiBase()}${msg.file_url}`} target="_blank" rel="noopener noreferrer" className="chat-file-attach">
+            <Icon name="file" size={18} />
+            <div className="chat-file-info">
+              <span className="chat-file-name">{msg.file_name}</span>
+              <span className="chat-file-size">{formatFileSize(msg.file_size)}</span>
+            </div>
+            <Icon name="download" size={16} className="chat-file-dl" />
+          </a>
+        )}
+        {(!hasFile || (msg.body && msg.body !== msg.file_name)) && <span>{msg.body}</span>}
+
+        {/* Hover actions */}
+        <div className="chat-bubble-actions">
+          <button title="React" onClick={onToggleEmojiPicker}><Icon name="emoji" size={14} /></button>
+          <button title="Reply" onClick={onReply}><Icon name="reply" size={14} /></button>
+          {(isMine || isChannelCreator) && (
+            <button title="Delete" onClick={onDelete}><Icon name="trash" size={14} /></button>
+          )}
+        </div>
+      </div>
+
+      {/* Emoji picker */}
+      {emojiPickerOpen && (
+        <div className="chat-emoji-picker" onClick={(e) => e.stopPropagation()}>
+          {QUICK_EMOJIS.map((em) => (
+            <button key={em} className="chat-emoji-btn" onClick={() => onReact(em)}>{em}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Reactions display */}
+      {Object.keys(reactionGroups).length > 0 && (
+        <div className="chat-reactions">
+          {Object.entries(reactionGroups).map(([emoji, users]) => (
+            <button
+              key={emoji}
+              className="chat-reaction-chip"
+              onClick={() => onReact(emoji)}
+              title={users.map((u) => u.user_name).join(', ')}
+            >
+              <span>{emoji}</span>
+              <span className="chat-reaction-count">{users.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Read receipts */}
+      {readBy && readBy.length > 0 && (
+        <div className="chat-read-by" title={readBy.join(', ')}>
+          <Icon name="check" size={11} />
+          <span>Read by {readBy.length <= 2 ? readBy.join(', ') : `${readBy.length} people`}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── New Channel Modal ───────────────────────────────────────────────────
 
 function NewChannelModal({ onClose, onCreated }) {
   const [users, setUsers] = useState([])
@@ -465,43 +679,27 @@ function NewChannelModal({ onClose, onCreated }) {
         )}
         <div className="chat-search">
           <Icon name="search" size={14} className="chat-search-icon" />
-          <input
-            placeholder="Search people by name or email…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <input placeholder="Search people by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="new-channel-users">
           {users.length === 0 && (
-            <div style={{ padding: 16, color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
-              No users found.
-            </div>
+            <div style={{ padding: 16, color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>No users found.</div>
           )}
           {users.map((u) => (
-            <button
-              key={u.id}
-              className={'new-channel-user' + (selected.has(u.id) ? ' selected' : '')}
-              onClick={() => toggle(u.id)}
-            >
+            <button key={u.id} className={'new-channel-user' + (selected.has(u.id) ? ' selected' : '')} onClick={() => toggle(u.id)}>
               <Avatar name={u.name} color={u.avatar_color} size="sm" />
               <div className="new-channel-user-name">
                 {u.name}
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>{u.email}</div>
               </div>
               {selected.has(u.id) && (
-                <span className="new-channel-user-check">
-                  <Icon name="check" size={14} />
-                </span>
+                <span className="new-channel-user-check"><Icon name="check" size={14} /></span>
               )}
             </button>
           ))}
         </div>
         {selected.size > 1 && (
-          <input
-            placeholder="Group name (optional)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <input placeholder="Group name (optional)" value={name} onChange={(e) => setName(e.target.value)} />
         )}
         <div className="new-channel-actions">
           <button onClick={onClose}>Cancel</button>

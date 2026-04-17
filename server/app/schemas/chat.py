@@ -27,10 +27,20 @@ class ChannelOut(BaseModel):
     members: list[ChannelMemberOut] = []
     last_message_preview: str | None = None
     last_message_at: datetime | None = None
+    unread_count: int = 0
 
 
 class MessageCreate(BaseModel):
     body: str = Field(min_length=1, max_length=4000)
+    reply_to_id: int | None = None
+
+
+class ReactionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    emoji: str
+    user_id: int
+    user_name: str
 
 
 class MessageOut(BaseModel):
@@ -43,3 +53,28 @@ class MessageOut(BaseModel):
     sender_color: str
     body: str
     created_at: datetime
+    deleted_at: datetime | None = None
+    reply_to_id: int | None = None
+    reply_preview: str | None = None
+    file_url: str | None = None
+    file_name: str | None = None
+    file_type: str | None = None
+    file_size: int | None = None
+    reactions: list[ReactionOut] = []
+
+
+class ReactionIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=32)
+
+
+class ReadReceiptIn(BaseModel):
+    last_read_message_id: int
+
+
+class ReadReceiptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    user_name: str
+    last_read_message_id: int
+    read_at: datetime

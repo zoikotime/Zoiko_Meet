@@ -34,6 +34,16 @@ _ADDITIVE_COLUMNS: list[tuple[str, str, str, str]] = [
     ("meeting_participants", "status", "VARCHAR(24) DEFAULT 'admitted' NOT NULL", "VARCHAR(24) DEFAULT 'admitted'"),
     ("meeting_participants", "peer_id", "VARCHAR(32)", "VARCHAR(32)"),
     ("meeting_participants", "last_seen_at", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP"),
+    # Chat enhancements
+    ("messages", "deleted_at", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP"),
+    ("messages", "reply_to_id", "INTEGER REFERENCES messages(id)", "INTEGER"),
+    ("messages", "file_url", "VARCHAR(500)", "VARCHAR(500)"),
+    ("messages", "file_name", "VARCHAR(255)", "VARCHAR(255)"),
+    ("messages", "file_type", "VARCHAR(100)", "VARCHAR(100)"),
+    ("messages", "file_size", "INTEGER", "INTEGER"),
+    ("channel_members", "is_muted", "BOOLEAN DEFAULT FALSE NOT NULL", "BOOLEAN DEFAULT 0"),
+    # Meeting password
+    ("meetings", "password_hash", "VARCHAR(255)", "VARCHAR(255)"),
 ]
 
 
