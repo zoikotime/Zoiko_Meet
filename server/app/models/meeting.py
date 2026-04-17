@@ -6,6 +6,20 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+# Participant roles
+ROLE_HOST = "host"
+ROLE_COHOST = "co_host"
+ROLE_PARTICIPANT = "participant"
+
+# Participant lifecycle status (server-side truth for waiting room + reconnects)
+STATUS_PENDING = "pending"       # in waiting room, awaiting admission
+STATUS_ADMITTED = "admitted"     # admitted, currently connected
+STATUS_DISCONNECTED = "disconnected"  # admitted but WS dropped (eligible for resume)
+STATUS_DENIED = "denied"         # host denied entry
+STATUS_KICKED = "kicked"         # removed by host
+STATUS_LEFT = "left"             # left voluntarily
+
+
 class Meeting(Base):
     __tablename__ = "meetings"
 
@@ -14,6 +28,14 @@ class Meeting(Base):
     title: Mapped[str] = mapped_column(String(200), default="Instant meeting")
     host_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # scheduling
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # IANA tz name (e.g. "Asia/Kolkata"); kept so clients can re-render in the host's timezone
+    timezone_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # host controls
+    waiting_room_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    locked: Mapped[bool] = mapped_column(Boolean, default=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -32,7 +54,16 @@ class MeetingParticipant(Base):
         ForeignKey("meetings.id", ondelete="CASCADE"), index=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    role: Mapped[str] = mapped_column(String(24), default=ROLE_PARTICIPANT)
+    status: Mapped[str] = mapped_column(String(24), default=STATUS_PENDING)
+    # Ephemeral peer id used by the signaling layer; survives short WS drops so reconnects
+    # can resume without re-negotiating the whole mesh.
+    peer_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
