@@ -30,6 +30,7 @@ FastAPI + React stack.
 - **Realtime:** FastAPI WebSocket (chat + WebRTC signaling)
 - **Media:** Browser WebRTC (mesh topology), Google STUN
 - **Deploy:** Docker + docker-compose (Postgres + FastAPI + nginx-served React build)
+- **Desktop:** Electron 33 + electron-builder + electron-updater (Windows / macOS / Linux, auto-updates via GitHub Releases)
 
 ## Project layout
 
@@ -115,6 +116,45 @@ npm run dev
 ```
 
 App: http://localhost:5173
+
+## Desktop app (Electron)
+
+Zoiko Meet also ships as a cross-platform desktop app with **auto-updates** via GitHub Releases.
+
+### Run in dev
+
+```bash
+cd client
+npm install
+npm run electron:dev
+```
+
+This starts Vite at `http://localhost:5173` and launches Electron against it with hot reload.
+
+### Build an installer locally
+
+```bash
+cd client
+npm run electron:dist     # builds + publishes
+npm run electron:pack     # builds an unpacked app without publishing
+```
+
+Artifacts land in `client/release/` — `.exe` (NSIS) on Windows, `.dmg` on macOS, `.AppImage` on Linux.
+
+### Release flow (auto-update)
+
+1. Bump `client/package.json` `version`.
+2. Commit and tag: `git tag v1.2.3 && git push origin v1.2.3`.
+3. GitHub Actions (`.github/workflows/release.yml`) builds on Windows + macOS + Linux and publishes installers **and** the `latest*.yml` update feed to a new GitHub Release.
+4. Running desktop clients check the feed every 4 hours, download the new version in the background, and show an in-app toast with a **Restart** button (see `client/src/components/UpdateToast.jsx`).
+
+### Branded icons
+
+Drop `icon.ico`, `icon.icns`, and `icon.png` into `client/build/` before cutting a release. Without them, electron-builder falls back to the default Electron icon.
+
+### Pointing the desktop app at prod
+
+Set the `VITE_API_BASE` GitHub Actions variable (Repo → Settings → Variables) to your production API URL before tagging a release. The workflow bakes it into the built bundle.
 
 ## How to use
 

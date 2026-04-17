@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
+import UpdateToast from './components/UpdateToast.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
@@ -31,6 +32,8 @@ function RedirectIfAuthed({ children }) {
 
 export default function App() {
   return (
+    <>
+    <UpdateToast />
     <Routes>
       <Route
         path="/login"
@@ -78,5 +81,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
