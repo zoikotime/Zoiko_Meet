@@ -7,6 +7,7 @@ class MeetingCreate(BaseModel):
     scheduled_at: datetime | None = None
     timezone_name: str | None = Field(default=None, max_length=64)
     waiting_room_enabled: bool = True
+    password: str | None = Field(default=None, max_length=128)
 
 
 class MeetingUpdate(BaseModel):
@@ -29,6 +30,7 @@ class MeetingOut(BaseModel):
     timezone_name: str | None = None
     waiting_room_enabled: bool = True
     locked: bool = False
+    password_protected: bool = False
     created_at: datetime
     ended_at: datetime | None = None
 
@@ -54,7 +56,46 @@ class MeetingRoster(BaseModel):
 
 class JoinMeetingIn(BaseModel):
     code: str
+    password: str | None = None
 
 
 class ParticipantActionIn(BaseModel):
     user_id: int
+
+
+# ── Recording schemas ──────────────────────────────────────────────────────
+
+class RecordingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    meeting_id: int
+    user_id: int
+    file_url: str | None = None
+    file_name: str
+    file_size: int | None = None
+    duration: int | None = None
+    includes_chat: bool = False
+    chat_log_url: str | None = None
+    status: str
+    share_token: str | None = None
+    created_at: datetime
+    meeting_code: str | None = None
+    meeting_title: str | None = None
+    recorder_name: str | None = None
+
+
+class RecordingShareOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    file_url: str | None = None
+    file_name: str
+    file_size: int | None = None
+    duration: int | None = None
+    includes_chat: bool = False
+    chat_log_url: str | None = None
+    status: str
+    created_at: datetime
+    meeting_title: str | None = None
+    recorder_name: str | None = None

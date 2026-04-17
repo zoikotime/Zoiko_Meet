@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey, Boolean
+from sqlalchemy import String, DateTime, ForeignKey, Boolean, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -35,6 +35,8 @@ class Meeting(Base):
     # host controls
     waiting_room_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Meeting password (bcrypt hash, nullable = no password)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -69,3 +71,35 @@ class MeetingParticipant(Base):
     left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     meeting: Mapped[Meeting] = relationship(back_populates="participants")
+
+
+# Recording status constants
+REC_STATUS_RECORDING = "recording"
+REC_STATUS_UPLOADING = "uploading"
+REC_STATUS_READY = "ready"
+REC_STATUS_FAILED = "failed"
+
+
+class MeetingRecording(Base):
+    __tablename__ = "meeting_recordings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    meeting_id: Mapped[int] = mapped_column(
+        ForeignKey("meetings.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    file_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_name: Mapped[str] = mapped_column(String(255), default="recording.webm")
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duration: Mapped[int | None] = mapped_column(Integer, nullable=True)  # seconds
+    includes_chat: Mapped[bool] = mapped_column(Boolean, default=False)
+    chat_log_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    status: Mapped[str] = mapped_column(String(24), default=REC_STATUS_RECORDING)
+    share_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    meeting: Mapped[Meeting] = relationship()
+    user: Mapped["User"] = relationship()

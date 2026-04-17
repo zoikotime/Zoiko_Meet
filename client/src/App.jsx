@@ -9,6 +9,9 @@ import Chat from './pages/Chat.jsx'
 import Meet from './pages/Meet.jsx'
 import MeetLobby from './pages/MeetLobby.jsx'
 import MeetRoom from './pages/MeetRoom.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import OrgSettings from './pages/OrgSettings.jsx'
+import Admin from './pages/Admin.jsx'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -78,6 +81,9 @@ export default function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/chat/:channelId" element={<Chat />} />
         <Route path="/meet" element={<Meet />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/org/:slug" element={<OrgSettings />} />
+        <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

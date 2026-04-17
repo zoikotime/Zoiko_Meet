@@ -125,6 +125,12 @@
   margin-top: 10px;
 }
 
+.side-notif-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
 .side-user {
   display: flex;
   align-items: center;

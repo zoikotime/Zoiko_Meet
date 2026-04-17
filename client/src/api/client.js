@@ -41,3 +41,21 @@ export async function api(path, { method = 'GET', body, form, auth = true } = {}
   if (res.status === 204) return null
   return res.json()
 }
+
+export async function uploadFile(path, file) {
+  const headers = {}
+  const t = token()
+  if (t) headers['Authorization'] = `Bearer ${t}`
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: fd })
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`
+    try {
+      const data = await res.json()
+      detail = data.detail || JSON.stringify(data)
+    } catch {}
+    throw new Error(detail)
+  }
+  return res.json()
+}
