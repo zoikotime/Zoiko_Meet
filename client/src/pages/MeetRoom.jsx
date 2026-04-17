@@ -1128,10 +1128,10 @@ export default function MeetRoom() {
       <div className="room-controls">
         <div className="room-controls-group">
           <button className={'round-btn lg' + (audioOn ? '' : ' off')} onClick={toggleAudio} title={audioOn ? 'Mute' : 'Unmute'}>
-            <Icon name={audioOn ? 'mic' : 'micOff'} size={22} />
+            <Icon name={audioOn ? 'mic' : 'micOff'} size={26} />
           </button>
           <button className={'round-btn lg' + (videoOn ? '' : ' off')} onClick={toggleVideo} title={videoOn ? 'Camera off' : 'Camera on'}>
-            <Icon name={videoOn ? 'camera' : 'cameraOff'} size={22} />
+            <Icon name={videoOn ? 'camera' : 'cameraOff'} size={26} />
           </button>
 
           {/* Screen share with mode picker */}
@@ -1141,7 +1141,7 @@ export default function MeetRoom() {
               onClick={screenOn ? stopScreenShare : () => setShowSharePicker(!showSharePicker)}
               title={screenOn ? 'Stop sharing' : 'Share screen'}
             >
-              <Icon name="screen" size={22} />
+              <Icon name="screen" size={26} />
             </button>
             {showSharePicker && (
               <div className="share-picker">
@@ -1177,20 +1177,20 @@ export default function MeetRoom() {
             onClick={isRecording ? stopRecording : startRecording}
             title={isRecording ? 'Stop recording' : 'Start recording'}
           >
-            <Icon name={isRecording ? 'recordStop' : 'record'} size={22} />
+            <Icon name={isRecording ? 'recordStop' : 'record'} size={26} />
           </button>
 
           <button className={'round-btn lg' + (bgMode !== 'none' ? ' active' : '')} onClick={cycleBgMode} title={`Background: ${bgMode === 'none' ? 'Off' : bgMode}`}>
-            <Icon name="blur" size={22} />
+            <Icon name="blur" size={26} />
           </button>
           <button className={'round-btn lg' + (noiseSupp ? ' active' : '')} onClick={toggleNoiseSuppression} title={noiseSupp ? 'Noise suppression on' : 'Noise suppression off'}>
-            <Icon name="noise" size={22} />
+            <Icon name="noise" size={26} />
           </button>
-          <button className={'round-btn lg' + (handRaised ? ' active' : '')} onClick={toggleHand} title={handRaised ? 'Lower hand' : 'Raise hand'}>
-            <Icon name="hand" size={22} />
+          <button className={'round-btn lg hand-btn' + (handRaised ? ' active' : '')} onClick={toggleHand} title={handRaised ? 'Lower hand' : 'Raise hand'}>
+            <Icon name="hand" size={26} />
           </button>
-          <button className="round-btn lg" onClick={() => setShowEmoji((v) => !v)} title="Send reaction">
-            <Icon name="smile" size={22} />
+          <button className="round-btn lg smile-btn" onClick={() => setShowEmoji((v) => !v)} title="Send reaction">
+            <Icon name="smile" size={26} />
           </button>
           {showEmoji && (
             <div className="emoji-picker">
@@ -1208,7 +1208,7 @@ export default function MeetRoom() {
             onClick={() => { setShowWhiteboard(!showWhiteboard); if (!showWhiteboard) setShowAnnotations(false) }}
             title={showWhiteboard ? 'Close whiteboard' : 'Open whiteboard'}
           >
-            <Icon name="whiteboard" size={22} />
+            <Icon name="whiteboard" size={26} />
           </button>
           {anyoneSharing && (
             <button
@@ -1216,31 +1216,31 @@ export default function MeetRoom() {
               onClick={() => { setShowAnnotations(!showAnnotations); if (!showAnnotations) setShowWhiteboard(false) }}
               title={showAnnotations ? 'Stop annotating' : 'Annotate screen'}
             >
-              <Icon name="pen" size={22} />
+              <Icon name="pen" size={26} />
             </button>
           )}
 
           <button className={'round-btn lg' + (layout === 'speaker' ? ' active' : '')} onClick={toggleLayout} title={layout === 'grid' ? 'Speaker view' : 'Grid view'}>
-            <Icon name={layout === 'grid' ? 'speakerView' : 'gridView'} size={22} />
+            <Icon name={layout === 'grid' ? 'speakerView' : 'gridView'} size={26} />
           </button>
           <button className={'round-btn lg' + (sidebar === 'chat' ? ' active' : '')} onClick={() => setSidebar((s) => (s === 'chat' ? null : 'chat'))} title="Open chat">
-            <Icon name="chat" size={22} />
+            <Icon name="chat" size={26} />
           </button>
           <button className={'round-btn lg' + (sidebar === 'people' ? ' active' : '')} onClick={() => setSidebar((s) => (s === 'people' ? null : 'people'))} title="Participants">
-            <Icon name="users" size={22} />
+            <Icon name="users" size={26} />
             {waitingList.length > 0 && <span className="btn-badge">{waitingList.length}</span>}
           </button>
           <button className={'round-btn lg' + (sidebar === 'ai' ? ' active' : '')} onClick={() => setSidebar((s) => (s === 'ai' ? null : 'ai'))} title="AI Assistant">
-            <Icon name="robot" size={22} />
+            <Icon name="robot" size={26} />
           </button>
-          <button className={'round-btn lg' + (sidebar === 'settings' ? ' active' : '')} onClick={() => setSidebar((s) => (s === 'settings' ? null : 'settings'))} title="Settings">
-            <Icon name="settings" size={22} />
+          <button className={'round-btn lg settings-btn' + (sidebar === 'settings' ? ' active' : '')} onClick={() => setSidebar((s) => (s === 'settings' ? null : 'settings'))} title="Settings">
+            <Icon name="settings" size={26} />
           </button>
         </div>
 
         <div className="room-controls-group">
           <button className="round-btn lg leave" onClick={leave} title="Leave meeting">
-            <Icon name="hangup" size={22} />
+            <Icon name="hangup" size={26} />
           </button>
         </div>
       </div>

@@ -26,6 +26,8 @@ ALLOWED_EXTENSIONS = {
     "png", "jpg", "jpeg", "gif", "webp", "svg",
     "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
     "txt", "csv", "zip", "json", "md",
+    # Audio / voice notes
+    "webm", "mp3", "wav", "ogg", "m4a",
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 

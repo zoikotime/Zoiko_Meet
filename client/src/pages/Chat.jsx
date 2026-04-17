@@ -8,6 +8,46 @@ import './Chat.css'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉', '🔥', '👏']
 
+// Categorized emoji set for the full picker
+const EMOJI_CATEGORIES = [
+  {
+    key: 'smileys', icon: '😀', label: 'Smileys & People',
+    emojis: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','🫠','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🫣','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😶‍🌫️','😏','😒','🙄','😬','😮‍💨','🤥','🫨','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','😵‍💫','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','☹️','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾']
+  },
+  {
+    key: 'gestures', icon: '👍', label: 'Gestures & Body',
+    emojis: ['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦','💋','👶','🧒','👦','👧','🧑','👱','👨','👩','🧓','👴','👵']
+  },
+  {
+    key: 'hearts', icon: '❤️', label: 'Hearts & Emotions',
+    emojis: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','💖','💗','💓','💞','💕','💘','💝','💟','♥️','💌','💯','💢','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤']
+  },
+  {
+    key: 'animals', icon: '🐶', label: 'Animals & Nature',
+    emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪰','🪲','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🪶','🐓','🦃','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔','🌵','🎄','🌲','🌳','🌴','🪵','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🪨','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌚','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌎','🌍','🌏','🪐','💫','⭐','🌟','✨','⚡','☄️','💥','🔥','🌪️','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','☃️','⛄','🌬️','💨','💧','💦','☔','☂️','🌊','🌫️']
+  },
+  {
+    key: 'food', icon: '🍔', label: 'Food & Drink',
+    emojis: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','🫖','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣','🥡','🥢','🧂']
+  },
+  {
+    key: 'activities', icon: '⚽', label: 'Activities & Travel',
+    emojis: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🚴','🚵','🎖️','🏅','🥇','🥈','🥉','🏆','🎗️','🎫','🎟️','🎪','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🪘','🎷','🎺','🪗','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩','🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','⛽','🚧','🚦','🚥','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🕍','🛕','🕋','⛩️']
+  },
+  {
+    key: 'objects', icon: '💡', label: 'Objects',
+    emojis: ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🪫','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','🪛','🔧','🔨','⚒️','🛠️','⛏️','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🔫','💣','🧨','🪓','🔪','🗡️','⚔️','🛡️','🚬','⚰️','🪦','⚱️','🏺','🔮','📿','🧿','🪬','💈','⚗️','🔭','🔬','🕳️','🩸','💊','🩹','🩼','🩺','🩻','🚪','🛗','🪞','🪟','🛏️','🛋️','🪑','🚽','🪠','🚿','🛁','🪤','🪒','🧴','🧷','🧹','🧺','🧻','🪣','🧼','🫧','🪥','🧽','🧯','🛒','🚬','⚰️','🪦','⚱️']
+  },
+  {
+    key: 'symbols', icon: '✅', label: 'Symbols',
+    emojis: ['✅','❌','❎','✔️','☑️','✖️','➕','➖','➗','🟰','♾️','‼️','⁉️','❓','❔','❕','❗','〰️','©️','®️','™️','#️⃣','*️⃣','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','🔠','🔡','🔢','🔣','🔤','🅰️','🆎','🅱️','🆑','🆒','🆓','ℹ️','🆔','Ⓜ️','🆕','🆖','🅾️','🆗','🅿️','🆘','🆙','🆚','🈁','🈂️','🈷️','🈶','🈯','🉐','🈹','🈚','🈲','🉑','🈸','🈴','🈳','㊗️','㊙️','🈺','🈵','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔳','🔲','⬛','⬜','🟥','🟧','🟨','🟩','🟦','🟪','🟫','▪️','▫️','◾','◽','◼️','◻️','🚫','⭕','🛑','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❓','❕','❔']
+  },
+  {
+    key: 'flags', icon: '🏁', label: 'Flags',
+    emojis: ['🏁','🚩','🎌','🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️','🇺🇸','🇬🇧','🇨🇦','🇦🇺','🇮🇳','🇯🇵','🇰🇷','🇨🇳','🇩🇪','🇫🇷','🇮🇹','🇪🇸','🇵🇹','🇳🇱','🇧🇪','🇸🇪','🇳🇴','🇩🇰','🇫🇮','🇮🇪','🇵🇱','🇨🇭','🇦🇹','🇬🇷','🇹🇷','🇷🇺','🇺🇦','🇧🇷','🇲🇽','🇦🇷','🇨🇱','🇨🇴','🇵🇪','🇿🇦','🇪🇬','🇳🇬','🇰🇪','🇦🇪','🇸🇦','🇮🇱','🇸🇬','🇲🇾','🇮🇩','🇹🇭','🇵🇭','🇻🇳','🇳🇿','🇵🇰','🇧🇩','🇱🇰','🇳🇵']
+  },
+]
+
 function formatTime(iso) {
   try {
     const d = new Date(iso)
@@ -104,10 +144,19 @@ export default function Chat() {
   const [emojiPicker, setEmojiPicker] = useState(null) // message id
   const [readReceipts, setReadReceipts] = useState({}) // { oderId: lastReadMsgId }
   const [uploading, setUploading] = useState(false)
+  const [showComposerEmoji, setShowComposerEmoji] = useState(false)
+  const [emojiTab, setEmojiTab] = useState('smileys')
+  const [isRecording, setIsRecording] = useState(false)
+  const [recTime, setRecTime] = useState(0)
   const wsRef = useRef(null)
   const messagesEndRef = useRef(null)
   const composerRef = useRef(null)
   const fileInputRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const recordedChunksRef = useRef([])
+  const recTimerRef = useRef(null)
+  const recStreamRef = useRef(null)
+  const cancelRecRef = useRef(false)
 
   const loadChannels = useCallback(async () => {
     const list = await api('/api/channels')
@@ -286,6 +335,86 @@ export default function Chat() {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  const insertEmoji = (emoji) => {
+    const el = composerRef.current
+    if (!el) { setDraft((d) => d + emoji); return }
+    const start = el.selectionStart ?? draft.length
+    const end = el.selectionEnd ?? draft.length
+    const next = draft.slice(0, start) + emoji + draft.slice(end)
+    setDraft(next)
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + emoji.length
+      try { el.setSelectionRange(pos, pos) } catch {}
+    })
+  }
+
+  const uploadVoiceBlob = async (blob) => {
+    if (!channelId) return
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const file = new File([blob], `voice-${stamp}.webm`, { type: 'audio/webm' })
+    setUploading(true)
+    try {
+      const msg = await uploadFile(`/api/channels/${channelId}/upload`, file)
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+    } catch (err) {
+      alert(err.message || 'Voice upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const startVoiceRecording = async () => {
+    if (isRecording) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recStreamRef.current = stream
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '')
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+      recordedChunksRef.current = []
+      cancelRecRef.current = false
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunksRef.current.push(e.data) }
+      recorder.onstop = () => {
+        const chunks = recordedChunksRef.current
+        recordedChunksRef.current = []
+        recStreamRef.current?.getTracks().forEach((t) => t.stop())
+        recStreamRef.current = null
+        if (!cancelRecRef.current && chunks.length > 0) {
+          const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+          uploadVoiceBlob(blob)
+        }
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+      setRecTime(0)
+      recTimerRef.current = setInterval(() => setRecTime((t) => t + 1), 1000)
+    } catch (e) {
+      alert('Microphone permission denied or unavailable.')
+    }
+  }
+
+  const stopVoiceRecording = (cancel = false) => {
+    cancelRecRef.current = cancel
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null }
+    const rec = mediaRecorderRef.current
+    if (rec && rec.state !== 'inactive') { try { rec.stop() } catch {} }
+    mediaRecorderRef.current = null
+    setIsRecording(false)
+    setRecTime(0)
+  }
+
+  useEffect(() => () => stopVoiceRecording(true), [])
+  useEffect(() => { setShowComposerEmoji(false); stopVoiceRecording(true) }, [channelId])
+
+  const formatRecTime = (s) => {
+    const m = Math.floor(s / 60).toString().padStart(2, '0')
+    const sec = (s % 60).toString().padStart(2, '0')
+    return `${m}:${sec}`
   }
 
   const typingText = useMemo(() => {
@@ -472,16 +601,25 @@ export default function Chat() {
                 ref={fileInputRef}
                 type="file"
                 hidden
-                accept=".png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.json,.md"
+                accept=".png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.json,.md,.webm,.mp3,.wav,.m4a,.ogg"
                 onChange={handleFileUpload}
               />
               <button
                 className="ghost chat-composer-btn"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || isRecording}
                 title="Attach file"
               >
                 {uploading ? <div className="spinner-sm" /> : <Icon name="attach" size={18} />}
+              </button>
+              <button
+                className="ghost chat-composer-btn"
+                onClick={() => setShowComposerEmoji((v) => !v)}
+                disabled={isRecording}
+                title="Emoji"
+                aria-label="Emoji"
+              >
+                <Icon name="smile" size={18} />
               </button>
               <textarea
                 ref={composerRef}
@@ -490,10 +628,40 @@ export default function Chat() {
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={onComposerKey}
                 rows={1}
+                disabled={isRecording}
               />
-              <button className="primary chat-send" onClick={sendMessage} disabled={!draft.trim()} aria-label="Send">
+              <button
+                className={'chat-voice-btn' + (isRecording ? ' recording' : '')}
+                onClick={isRecording ? () => stopVoiceRecording(false) : startVoiceRecording}
+                title={isRecording ? 'Send voice note' : 'Record voice note'}
+                aria-label={isRecording ? 'Send voice note' : 'Record voice note'}
+              >
+                <Icon name={isRecording ? 'send' : 'mic'} size={18} />
+              </button>
+              <button className="primary chat-send" onClick={sendMessage} disabled={!draft.trim() || isRecording} aria-label="Send">
                 <Icon name="send" size={16} />
               </button>
+
+              {isRecording && (
+                <div className="voice-recording-bar">
+                  <span className="rec-pulse" />
+                  <span className="rec-time">{formatRecTime(recTime)}</span>
+                  <span className="rec-bars" aria-hidden="true">
+                    {Array.from({ length: 28 }).map((_, i) => <span key={i} />)}
+                  </span>
+                  <button className="rec-cancel" onClick={() => stopVoiceRecording(true)}>Cancel</button>
+                  <button className="rec-send" onClick={() => stopVoiceRecording(false)}>Send</button>
+                </div>
+              )}
+
+              {showComposerEmoji && (
+                <ComposerEmojiPicker
+                  activeTab={emojiTab}
+                  onTabChange={setEmojiTab}
+                  onPick={(e) => insertEmoji(e)}
+                  onClose={() => setShowComposerEmoji(false)}
+                />
+              )}
             </div>
           </>
         )}
@@ -527,6 +695,7 @@ function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDele
 
   const hasFile = !!msg.file_url
   const isImage = hasFile && isImageType(msg.file_type)
+  const isAudio = hasFile && ((msg.file_type || '').startsWith('audio/') || /\.(webm|mp3|wav|ogg|m4a)$/i.test(msg.file_name || ''))
 
   // Group reactions by emoji
   const reactionGroups = useMemo(() => {
@@ -553,7 +722,13 @@ function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDele
             <img src={`${getApiBase()}${msg.file_url}`} alt={msg.file_name} />
           </a>
         )}
-        {hasFile && !isImage && (
+        {hasFile && isAudio && (
+          <div className="chat-voice-note">
+            <Icon name="mic" size={16} />
+            <audio controls preload="metadata" src={`${getApiBase()}${msg.file_url}`} />
+          </div>
+        )}
+        {hasFile && !isImage && !isAudio && (
           <a href={`${getApiBase()}${msg.file_url}`} target="_blank" rel="noopener noreferrer" className="chat-file-attach">
             <Icon name="file" size={18} />
             <div className="chat-file-info">
@@ -608,6 +783,46 @@ function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDele
           <span>Read by {readBy.length <= 2 ? readBy.join(', ') : `${readBy.length} people`}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Composer emoji picker (full) ───────────────────────────────────────
+function ComposerEmojiPicker({ activeTab, onTabChange, onPick, onClose }) {
+  const rootRef = useRef(null)
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!rootRef.current) return
+      if (!rootRef.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [onClose])
+
+  const active = EMOJI_CATEGORIES.find((c) => c.key === activeTab) || EMOJI_CATEGORIES[0]
+  return (
+    <div ref={rootRef} className="composer-emoji-popover" role="dialog" aria-label="Emoji picker">
+      <div className="emoji-tabs">
+        {EMOJI_CATEGORIES.map((c) => (
+          <button
+            key={c.key}
+            className={'emoji-tab' + (c.key === active.key ? ' active' : '')}
+            onClick={() => onTabChange(c.key)}
+            title={c.label}
+            aria-label={c.label}
+          >
+            {c.icon}
+          </button>
+        ))}
+      </div>
+      <div className="emoji-grid">
+        <div className="emoji-grid-title">{active.label}</div>
+        {active.emojis.map((em, i) => (
+          <button key={`${active.key}-${i}`} className="emoji-item" onClick={() => onPick(em)}>
+            {em}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
