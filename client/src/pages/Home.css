@@ -31,6 +31,7 @@
   font-weight: 700;
   letter-spacing: -0.035em;
   margin: 0 0 8px;
+  color: var(--text);
 }
 
 .home-hero-title .grad {
@@ -57,7 +58,7 @@
 
 .home-card {
   position: relative;
-  background: var(--bg-2);
+  background: var(--bg-1);
   border: 1px solid var(--border);
   padding: 22px;
   border-radius: var(--r-lg);
@@ -65,8 +66,9 @@
   flex-direction: column;
   gap: 10px;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
   transition:
-    transform var(--dur) var(--ease),
+    transform var(--dur) var(--ease-spring),
     border-color var(--dur) var(--ease),
     background var(--dur) var(--ease),
     box-shadow var(--dur) var(--ease);
@@ -79,29 +81,30 @@
 .home-card:nth-child(4) { animation-delay: 160ms; }
 
 .home-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: var(--border-strong);
-  background: var(--bg-3);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
 }
 
 .home-card-featured {
   background:
-    radial-gradient(600px 200px at 0% 0%, rgba(124,140,255,0.12), transparent 60%),
-    radial-gradient(500px 200px at 100% 100%, rgba(255,123,217,0.10), transparent 60%),
-    var(--bg-2);
-  border-color: rgba(124,140,255,0.25);
+    radial-gradient(600px 200px at 0% 0%, rgba(124,140,255,0.10), transparent 60%),
+    radial-gradient(500px 200px at 100% 100%, rgba(214,112,255,0.08), transparent 60%),
+    var(--bg-1);
+  border-color: rgba(124,140,255,0.30);
 }
 .home-card-featured:hover {
-  border-color: rgba(124,140,255,0.45);
-  box-shadow: 0 20px 50px -20px rgba(124,140,255,0.35);
+  border-color: rgba(124,140,255,0.50);
+  box-shadow:
+    0 24px 48px -16px rgba(124,140,255,0.30),
+    0 8px 16px -8px rgba(214,112,255,0.18);
 }
 
 .home-card-glow {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: conic-gradient(from 180deg at 50% 50%, transparent 0deg, rgba(124,140,255,0.25) 60deg, rgba(255,123,217,0.25) 180deg, transparent 240deg, transparent 360deg);
+  background: conic-gradient(from 180deg at 50% 50%, transparent 0deg, rgba(124,140,255,0.30) 60deg, rgba(214,112,255,0.25) 180deg, transparent 240deg, transparent 360deg);
   opacity: 0;
   transition: opacity var(--dur-slow) var(--ease);
   z-index: -1;
@@ -121,22 +124,30 @@
 .home-card-icon {
   width: 44px; height: 44px;
   border-radius: var(--r-md);
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-3);
   color: var(--text-dim);
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
-  transition: all var(--dur) var(--ease);
+  transition: all var(--dur) var(--ease-spring);
 }
 .home-card:hover .home-card-icon {
-  background: rgba(255,255,255,0.08);
-  color: var(--text);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(91,103,242,0.20);
+  transform: scale(1.06) rotate(-3deg);
 }
 .home-card-icon.gradient {
   background: var(--accent-gradient);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 10px 24px -10px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 10px 24px -10px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.home-card:hover .home-card-icon.gradient {
+  background: var(--accent-gradient);
+  color: #fff;
+  filter: brightness(1.06);
+  transform: scale(1.06) rotate(-3deg);
 }
 
 .home-card h3 {
@@ -144,6 +155,7 @@
   font-size: 17px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--text);
 }
 .home-card p {
   margin: 0;
@@ -157,8 +169,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--bg);
-  border: 1px solid rgba(251,191,36,0.25);
+  background: var(--warn-soft);
+  border: 1px solid rgba(245,158,11,0.30);
   border-radius: var(--r-sm);
   animation: fadeInUp var(--dur) var(--ease-out) both;
 }
@@ -172,6 +184,7 @@
   font-size: 13px;
   font-family: inherit;
   padding: 0;
+  box-shadow: none;
 }
 .home-card-password input::placeholder { color: var(--muted); }
 
@@ -213,12 +226,12 @@
   border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
   color: var(--muted);
-  background: rgba(255,255,255,0.015);
+  background: var(--surface-tint);
 }
 .home-empty-icon {
   width: 42px; height: 42px;
   border-radius: var(--r-md);
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-3);
   display: grid;
   place-items: center;
   color: var(--text-dim);
@@ -238,7 +251,7 @@
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
-  background: var(--bg-2);
+  background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   cursor: pointer;
@@ -246,12 +259,18 @@
   font: inherit;
   color: inherit;
   width: 100%;
-  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 .home-recent-item:hover {
-  background: var(--bg-3);
-  border-color: var(--border-strong);
-  transform: translateX(2px);
+  background: var(--bg-1);
+  border-color: rgba(91,103,242,0.30);
+  transform: translateX(3px);
+  box-shadow: var(--shadow-md);
 }
 
 .home-recent-icon {
@@ -262,8 +281,10 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  border: 1px solid rgba(124,140,255,0.2);
+  border: 1px solid rgba(124,140,255,0.20);
+  transition: transform var(--dur) var(--ease-spring);
 }
+.home-recent-item:hover .home-recent-icon { transform: scale(1.08) rotate(-4deg); }
 
 .home-recent-body { flex: 1; min-width: 0; }
 .home-recent-title {
@@ -273,6 +294,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text);
 }
 .home-recent-code {
   font-size: 12px;
@@ -294,18 +316,18 @@
 .home-recent-chev {
   color: var(--muted-2);
   opacity: 0.6;
-  transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.home-recent-item:hover .home-recent-chev { opacity: 1; transform: translateX(2px); color: var(--accent); }
+.home-recent-item:hover .home-recent-chev { opacity: 1; transform: translateX(3px); color: var(--accent); }
 
 /* ---------- Schedule modal ---------- */
 .schedule-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.6);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.45);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
   padding: 24px;
@@ -314,18 +336,18 @@
 .schedule-modal {
   width: 100%;
   max-width: 460px;
-  background: var(--bg-2);
-  border: 1px solid var(--border-strong);
+  background: var(--bg-1);
+  border: 1px solid var(--border);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg);
-  animation: fadeInUp var(--dur) var(--ease-out) both;
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn var(--dur-slow) var(--ease-spring) both;
   overflow: hidden;
 }
 .schedule-modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 0;
+  padding: 22px 24px 0;
 }
 .schedule-modal-head h2 {
   margin: 0;
@@ -352,25 +374,26 @@
 }
 .schedule-field input,
 .schedule-field select {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--bg-1);
+  border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   padding: 10px 12px;
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
-  transition: border-color var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .schedule-field input:focus,
 .schedule-field select:focus {
   border-color: var(--accent);
   outline: none;
+  box-shadow: var(--accent-ring);
 }
 .schedule-field select {
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
@@ -412,26 +435,30 @@
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
-  background: var(--bg-2);
+  background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  box-shadow: var(--shadow-xs);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .home-rec-item:hover {
-  background: var(--bg-3);
   border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .home-rec-icon {
   width: 36px; height: 36px;
   border-radius: var(--r-sm);
-  background: rgba(239,79,107,0.1);
-  color: #ef4f6b;
+  background: var(--danger-soft);
+  color: var(--danger);
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  border: 1px solid rgba(239,79,107,0.2);
+  border: 1px solid rgba(239,68,68,0.20);
+  transition: transform var(--dur) var(--ease-spring);
 }
+.home-rec-item:hover .home-rec-icon { transform: scale(1.08); }
 
 .home-rec-body { flex: 1; min-width: 0; }
 .home-rec-title {
@@ -441,6 +468,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text);
 }
 .home-rec-meta-row {
   display: flex;
@@ -490,21 +518,22 @@
   border-radius: var(--r-sm);
   display: grid;
   place-items: center;
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-3);
   color: var(--muted);
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease);
 }
 .home-rec-action:hover {
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
-  border-color: var(--border-strong);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(91,103,242,0.25);
+  transform: translateY(-1px);
 }
 .home-rec-action.danger:hover {
-  background: rgba(239,79,107,0.1);
+  background: var(--danger-soft);
   color: var(--danger);
-  border-color: rgba(239,79,107,0.3);
+  border-color: rgba(239,68,68,0.30);
 }
 
 /* ---------- Responsive ---------- */
