@@ -1,0 +1,26 @@
+"""Zoiko Connect v3 bounded-context services.
+
+This package is intentionally isolated from the legacy `app.api` and
+`app.websocket` trees. Legacy code stays running for backwards compatibility
+during the strangler-fig migration; new features land here.
+
+Mounting: `app.main` imports `connect.router` and mounts it at `/api/connect`.
+"""
+from fastapi import APIRouter
+
+from app.connect.session_service.api import router as session_router
+from app.connect.conversation_service.api import router as conversation_router
+from app.connect.messaging_service.api import router as messaging_router
+from app.connect.presence_service.api import router as presence_router
+from app.connect.media_service.api import router as media_router
+from app.connect.gateway.ws import router as gateway_ws_router
+
+router = APIRouter(prefix="/api/connect", tags=["connect-v3"])
+router.include_router(session_router)
+router.include_router(conversation_router)
+router.include_router(messaging_router)
+router.include_router(presence_router)
+router.include_router(media_router)
+router.include_router(gateway_ws_router)
+
+__all__ = ["router"]
