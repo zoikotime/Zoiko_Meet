@@ -10,6 +10,7 @@ from app.core.database import init_db
 from app.core.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from app.api import auth, users, chat, meetings, recordings, organizations, notifications, invites, dashboard, ai, admin, calls
 from app.websocket import chat as chat_ws, signaling as meeting_ws
+from app.connect import router as connect_router
 
 settings = get_settings()
 
@@ -52,6 +53,10 @@ app.include_router(admin.router)
 app.include_router(calls.router)
 app.include_router(chat_ws.router)
 app.include_router(meeting_ws.router)
+
+# Zoiko Connect v3 — new bounded services mounted alongside legacy routers.
+# Strangler-fig: legacy paths keep working; new features consume /api/connect/*.
+app.include_router(connect_router)
 
 # Serve uploaded files
 _upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
