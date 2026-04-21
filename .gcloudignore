@@ -1,0 +1,36 @@
+# Files excluded from the Cloud Build upload context.
+# Keep the server image small and the upload fast by skipping the client,
+# docs, git metadata, and anything not needed to build+run the FastAPI app.
+
+.git
+.gitignore
+.github
+
+# Frontend — not part of the Cloud Run server image
+client
+
+# Docs and examples
+docs
+README.md
+.env
+.env.example
+
+# Compose files (for local / SSH deploy, not Cloud Run)
+docker-compose.yml
+docker-compose.prod.yml
+
+# Python caches / virtualenvs
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+**/.pytest_cache
+
+# Node caches (if any leaked up)
+**/node_modules
+
+# Editor / OS cruft
+.vscode
+.idea
+.DS_Store
+Thumbs.db
