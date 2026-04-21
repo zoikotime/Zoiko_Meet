@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, getApiBase, getWsBase, uploadFile } from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { useCall } from '../context/CallContext'
 import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
 import './Chat.css'
@@ -132,6 +133,7 @@ export default function Chat() {
   const { channelId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { startCall } = useCall()
 
   const [channels, setChannels] = useState([])
   const [messages, setMessages] = useState([])
@@ -520,6 +522,9 @@ export default function Chat() {
           <>
             {(() => {
               const display = channelDisplay(activeChannel, user.id)
+              const otherMember = activeChannel.is_direct
+                ? activeChannel.members.find((m) => m.id !== user.id)
+                : null
               return (
                 <header className="chat-thread-header">
                   <div className="chat-thread-header-avatar">
@@ -536,6 +541,28 @@ export default function Chat() {
                       )}
                     </div>
                   </div>
+                  {otherMember && (
+                    <div className="chat-thread-header-actions">
+                      <button
+                        type="button"
+                        className="chat-call-btn"
+                        title="Audio call"
+                        aria-label="Start audio call"
+                        onClick={() => startCall(otherMember, 'audio')}
+                      >
+                        <Icon name="phone" size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="chat-call-btn"
+                        title="Video call"
+                        aria-label="Start video call"
+                        onClick={() => startCall(otherMember, 'video')}
+                      >
+                        <Icon name="video" size={18} />
+                      </button>
+                    </div>
+                  )}
                 </header>
               )
             })()}

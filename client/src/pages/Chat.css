@@ -221,6 +221,35 @@
   position: relative;
   flex-shrink: 0;
 }
+.chat-thread-header-main {
+  flex: 1;
+  min-width: 0;
+}
+.chat-thread-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chat-call-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel, #fff);
+  color: var(--text, #15171f);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.chat-call-btn:hover {
+  background: rgba(124, 140, 255, 0.10);
+  border-color: rgba(124, 140, 255, 0.45);
+  color: #5b6bff;
+  transform: translateY(-1px);
+}
+.chat-call-btn:active { transform: translateY(0); }
 .chat-thread-header-avatar .presence-dot {
   bottom: 0; right: 0;
   width: 11px; height: 11px;

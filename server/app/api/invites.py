@@ -235,7 +235,7 @@ def download_calendar(
         meeting_code=meeting.code,
         join_url=f"{settings.frontend_url}/meet/{meeting.code}",
         scheduled_at=meeting.scheduled_at,
-        organizer_name=host.name if host else "Zoiko Meet",
+        organizer_name=host.name if host else "Zoiko connect",
         attendee_email=user.email,
     )
 

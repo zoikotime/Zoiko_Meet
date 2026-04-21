@@ -9,7 +9,7 @@ def generate_ics(
     join_url: str,
     scheduled_at: datetime,
     duration_minutes: int = 60,
-    organizer_name: str = "Zoiko Meet",
+    organizer_name: str = "Zoiko connect",
     organizer_email: str = "noreply@zoikomeet.com",
     attendee_email: str | None = None,
     description: str | None = None,
@@ -31,7 +31,7 @@ def generate_ics(
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Zoiko Meet//EN",
+        "PRODID:-//Zoiko connect//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:REQUEST",
         "BEGIN:VEVENT",

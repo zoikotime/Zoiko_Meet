@@ -84,7 +84,7 @@ def send_meeting_invite_email(
         <div style="text-align:center;">
             <a href="{join_url}" style="display:inline-block;background:linear-gradient(135deg,#7c8cff,#ff7bd9);color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;font-size:15px;">Join Meeting</a>
         </div>
-        <p style="text-align:center;color:#555;font-size:12px;margin-top:24px;">Zoiko Meet &mdash; Secure video meetings for everyone</p>
+        <p style="text-align:center;color:#555;font-size:12px;margin-top:24px;">Zoiko connect &mdash; Secure video meetings for everyone</p>
     </div>
     """
 

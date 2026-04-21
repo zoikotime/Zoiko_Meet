@@ -23,7 +23,7 @@ export default function UpdateToast() {
         <div className="upd-toast-icon"><Icon name="sparkle" size={16} /></div>
         <div className="upd-toast-body">
           <div className="upd-toast-title">Update available</div>
-          <div className="upd-toast-sub">Downloading Zoiko Meet {payload?.version}…</div>
+          <div className="upd-toast-sub">Downloading Zoiko connect {payload?.version}…</div>
         </div>
       </div>
     )
@@ -47,7 +47,7 @@ export default function UpdateToast() {
         <div className="upd-toast-icon"><Icon name="check" size={16} /></div>
         <div className="upd-toast-body">
           <div className="upd-toast-title">Update ready</div>
-          <div className="upd-toast-sub">Zoiko Meet {payload?.version} will install on restart.</div>
+          <div className="upd-toast-sub">Zoiko connect {payload?.version} will install on restart.</div>
         </div>
         <button className="primary sm" onClick={() => window.zoiko?.quitAndInstall()}>
           Restart

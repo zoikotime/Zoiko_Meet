@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from app.api import auth, users, chat, meetings, recordings, organizations, notifications, invites, dashboard, ai, admin
+from app.api import auth, users, chat, meetings, recordings, organizations, notifications, invites, dashboard, ai, admin, calls
 from app.websocket import chat as chat_ws, signaling as meeting_ws
 
 settings = get_settings()
@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Zoiko Meet API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Zoiko connect API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,6 +49,7 @@ app.include_router(invites.router)
 app.include_router(dashboard.router)
 app.include_router(ai.router)
 app.include_router(admin.router)
+app.include_router(calls.router)
 app.include_router(chat_ws.router)
 app.include_router(meeting_ws.router)
 

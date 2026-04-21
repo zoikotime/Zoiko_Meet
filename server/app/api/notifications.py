@@ -30,6 +30,26 @@ async def push_notification(user_id: int, notification: dict) -> None:
         conns.remove(ws)
 
 
+async def push_to_user(user_id: int, payload: dict) -> int:
+    """Push an arbitrary JSON payload to all WS connections for a user.
+    Returns the number of live connections the payload reached."""
+    conns = _ws_connections.get(user_id, [])
+    dead = []
+    delivered = 0
+    for ws in conns:
+        try:
+            await ws.send_json(payload)
+            delivered += 1
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        try:
+            conns.remove(ws)
+        except ValueError:
+            pass
+    return delivered
+
+
 def create_notification_sync(
     db: Session,
     user_id: int,

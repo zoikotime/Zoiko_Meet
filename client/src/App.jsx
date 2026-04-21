@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import UpdateToast from './components/UpdateToast.jsx'
+import CallOverlay from './components/CallOverlay.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <>
     <UpdateToast />
+    <CallOverlay />
     <Routes>
       <Route
         path="/login"
