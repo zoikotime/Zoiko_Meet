@@ -68,7 +68,7 @@ docker compose up --build
 
 Then open:
 - App: http://localhost:8080
-- API docs: http://localhost:8000/docs
+- API docs: http://localhost:8001/docs
 
 Shut down: `docker compose down`  ·  Wipe DB volume: `docker compose down -v`
 
@@ -101,10 +101,10 @@ venv\Scripts\activate          # Windows
 # source venv/bin/activate     # macOS/Linux
 pip install -r requirements.txt
 cp .env.example .env           # edit JWT_SECRET
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8080
 ```
 
-API docs: http://localhost:8000/docs
+API docs: http://localhost:8080/docs
 
 ### 2. Frontend
 
@@ -176,7 +176,7 @@ Set the `VITE_API_BASE` GitHub Actions variable (Repo → Settings → Variables
 | Service  | Port | Purpose                                    |
 |----------|------|--------------------------------------------|
 | `db`     | 5432 | Postgres 16 (skipped if `DATABASE_URL` points elsewhere) |
-| `server` | 8000 | FastAPI app                                |
+| `server` | 8080 | FastAPI app                                |
 | `client` | 8080 | Production React build served by nginx     |
 
 Rebuild one service after code changes: `docker compose up --build server`
