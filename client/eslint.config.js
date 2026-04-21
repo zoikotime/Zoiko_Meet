@@ -23,7 +23,13 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      // Silent-fail catches are an intentional pattern throughout the codebase
+      // (e.g. best-effort localStorage writes, optional server calls on logout).
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      // Context files intentionally co-export their hook alongside the Provider
+      // component (AuthContext, CallContext). Keep as warning, not error.
+      'react-refresh/only-export-components': 'warn',
     },
   },
 ])
