@@ -43,7 +43,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8001:8000"
+      - "8001:8080"
     volumes:
       - zoiko_uploads:/app/uploads
       - zoiko_recordings:/app/recordings

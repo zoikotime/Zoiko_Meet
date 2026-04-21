@@ -2207,7 +2207,7 @@ spec:
       containers:
       - name: gateway
         image: us-central1-docker.pkg.dev/PROJECT/connect/gateway:2026.04.21-a4f8
-        ports: [{containerPort: 8000, name: http}]
+        ports: [{containerPort: 8080, name: http}]
         env:
           - {name: CONNECT_ENV, value: prod}
           - {name: CONNECT_DB_URL, valueFrom: {secretKeyRef: {name: connect-db-url, key: url}}}
