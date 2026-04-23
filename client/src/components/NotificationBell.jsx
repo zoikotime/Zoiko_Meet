@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, getWsBase } from '../api/client'
 import Icon from './Icon'
@@ -37,20 +37,22 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null)
   const wsRef = useRef(null)
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const [notifs, countData] = await Promise.all([
-        api('/api/notifications?limit=20'),
-        api('/api/notifications/unread-count'),
-      ])
-      setNotifications(notifs)
-      setUnreadCount(countData.count)
-    } catch {}
-  }, [])
-
   useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+    let cancelled = false
+    const load = async () => {
+      try {
+        const [notifs, countData] = await Promise.all([
+          api('/api/notifications?limit=20'),
+          api('/api/notifications/unread-count'),
+        ])
+        if (cancelled) return
+        setNotifications(notifs)
+        setUnreadCount(countData.count)
+      } catch { /* best-effort fetch */ }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   // Real-time WS connection
   useEffect(() => {

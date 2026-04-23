@@ -22,10 +22,23 @@ export default function useMediaDevices() {
   }, [])
 
   useEffect(() => {
-    refresh()
-    navigator.mediaDevices?.addEventListener('devicechange', refresh)
-    return () => navigator.mediaDevices?.removeEventListener('devicechange', refresh)
-  }, [refresh])
+    let cancelled = false
+    const enumerate = async () => {
+      try {
+        const all = await navigator.mediaDevices.enumerateDevices()
+        if (cancelled) return
+        const audio = all.filter((d) => d.kind === 'audioinput' && d.deviceId)
+        const video = all.filter((d) => d.kind === 'videoinput' && d.deviceId)
+        setDevices({ audio, video })
+      } catch { /* ignore enumeration failures */ }
+    }
+    enumerate()
+    navigator.mediaDevices?.addEventListener('devicechange', enumerate)
+    return () => {
+      cancelled = true
+      navigator.mediaDevices?.removeEventListener('devicechange', enumerate)
+    }
+  }, [])
 
   return { devices, audioDeviceId, setAudioDeviceId, videoDeviceId, setVideoDeviceId, refresh }
 }

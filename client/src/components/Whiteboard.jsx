@@ -28,52 +28,6 @@ export default function Whiteboard({ onDraw, remoteStrokes, onClose }) {
   const [showSizes, setShowSizes] = useState(false)
   const [textInput, setTextInput] = useState(null)  // { x, y } when placing text
 
-  // Initialize canvas
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    const ctx = canvas.getContext('2d')
-    ctx.scale(dpr, dpr)
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctxRef.current = ctx
-    redrawAll([])
-  }, [])
-
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const dpr = window.devicePixelRatio || 1
-      const rect = canvas.getBoundingClientRect()
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
-      const ctx = canvas.getContext('2d')
-      ctx.scale(dpr, dpr)
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctxRef.current = ctx
-      redrawAll(strokes)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [strokes])
-
-  // Render remote strokes
-  useEffect(() => {
-    if (!remoteStrokes?.length) return
-    const last = remoteStrokes[remoteStrokes.length - 1]
-    if (last) {
-      drawStroke(last)
-      setStrokes(prev => [...prev, last])
-    }
-  }, [remoteStrokes])
-
   const getCanvasPos = useCallback((e) => {
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
@@ -169,6 +123,54 @@ export default function Whiteboard({ onDraw, remoteStrokes, onClose }) {
     ctx.clearRect(0, 0, rect.width, rect.height)
     for (const s of allStrokes) drawStroke(s)
   }, [drawStroke])
+
+  // Initialize canvas
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const dpr = window.devicePixelRatio || 1
+    const rect = canvas.getBoundingClientRect()
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    const ctx = canvas.getContext('2d')
+    ctx.scale(dpr, dpr)
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctxRef.current = ctx
+    redrawAll([])
+  }, [redrawAll])
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctxRef.current = ctx
+      redrawAll(strokes)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [strokes, redrawAll])
+
+  // Render remote strokes — mirror inbound prop into local state so undo/redo
+  // and resize redraws treat them the same as locally-drawn strokes.
+  useEffect(() => {
+    if (!remoteStrokes?.length) return
+    const last = remoteStrokes[remoteStrokes.length - 1]
+    if (last) {
+      drawStroke(last)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStrokes(prev => [...prev, last])
+    }
+  }, [remoteStrokes, drawStroke])
 
   const commitStroke = useCallback((stroke) => {
     setStrokes(prev => [...prev, stroke])

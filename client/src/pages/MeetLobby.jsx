@@ -18,6 +18,7 @@ export default function MeetLobby() {
   const [audioOn, setAudioOn] = useState(true)
   const [videoOn, setVideoOn] = useState(true)
   const [starting, setStarting] = useState(true)
+  const [hasStream, setHasStream] = useState(false)
   const [copied, setCopied] = useState(false)
   const [waitingStatus, setWaitingStatus] = useState(null)
   const [showDevices, setShowDevices] = useState(false)
@@ -46,6 +47,7 @@ export default function MeetLobby() {
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return }
         streamRef.current = stream
         if (videoRef.current) videoRef.current.srcObject = stream
+        setHasStream(true)
         setStarting(false)
         refreshDevices()
       } catch {
@@ -218,7 +220,7 @@ export default function MeetLobby() {
                 <div className="spinner" />
                 <span>Starting camera…</span>
               </div>
-            ) : videoOn && streamRef.current ? (
+            ) : videoOn && hasStream ? (
               <video ref={videoRef} autoPlay playsInline muted />
             ) : (
               <div className="lobby-preview-placeholder">

@@ -19,43 +19,6 @@ export default function AnnotationOverlay({ onAnnotate, remoteAnnotations, onCle
   const startRef = useRef(null)
   const [pointerPos, setPointerPos] = useState(null) // for laser pointer
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1
-      const rect = canvas.getBoundingClientRect()
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
-      const ctx = canvas.getContext('2d')
-      ctx.scale(dpr, dpr)
-      ctxRef.current = ctx
-      redrawAll(annotations)
-    }
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [annotations])
-
-  // Render remote annotations
-  useEffect(() => {
-    if (!remoteAnnotations?.length) return
-    const last = remoteAnnotations[remoteAnnotations.length - 1]
-    if (last) {
-      if (last.tool === 'clear') {
-        setAnnotations([])
-        redrawAll([])
-      } else if (last.tool === 'pointer') {
-        // Just show remote pointer momentarily
-        setPointerPos(last.pos)
-        setTimeout(() => setPointerPos(null), 2000)
-      } else {
-        drawAnnotation(last)
-        setAnnotations(prev => [...prev, last])
-      }
-    }
-  }, [remoteAnnotations])
-
   const toPixel = useCallback((pos) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
@@ -136,6 +99,45 @@ export default function AnnotationOverlay({ onAnnotate, remoteAnnotations, onCle
     ctx.clearRect(0, 0, rect.width, rect.height)
     for (const a of all) drawAnnotation(a)
   }, [drawAnnotation])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      ctxRef.current = ctx
+      redrawAll(annotations)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+  }, [annotations, redrawAll])
+
+  // Render remote annotations — mirror inbound prop into local state so
+  // redrawAll (on resize) can replay every annotation, local or remote.
+  useEffect(() => {
+    if (!remoteAnnotations?.length) return
+    const last = remoteAnnotations[remoteAnnotations.length - 1]
+    if (last) {
+      if (last.tool === 'clear') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAnnotations([])
+        redrawAll([])
+      } else if (last.tool === 'pointer') {
+        // Just show remote pointer momentarily
+        setPointerPos(last.pos)
+        setTimeout(() => setPointerPos(null), 2000)
+      } else {
+        drawAnnotation(last)
+        setAnnotations(prev => [...prev, last])
+      }
+    }
+  }, [remoteAnnotations, drawAnnotation, redrawAll])
 
   const handleDown = useCallback((e) => {
     e.stopPropagation()
