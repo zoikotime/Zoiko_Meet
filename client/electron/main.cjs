@@ -1,18 +1,18 @@
 /* eslint-disable */
 const { app, BrowserWindow, shell, ipcMain, session, dialog, Menu } = require('electron')
 const path = require('path')
-const { autoUpdater } = require('electron-updater')
 const log = require('electron-log')
 
 log.transports.file.level = 'info'
-autoUpdater.logger = log
-autoUpdater.autoDownload = true
-autoUpdater.autoInstallOnAppQuit = true
 
 const isDev = !app.isPackaged
 const devUrl = process.env.ELECTRON_START_URL || 'http://localhost:5173'
 
 let mainWindow = null
+// electron-updater lazy-initializes on first access and reads app.getVersion()
+// at require time — importing it before app is ready throws. Loaded inside
+// wireAutoUpdater() instead.
+let autoUpdater = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -74,6 +74,16 @@ function wireAutoUpdater() {
     return
   }
 
+  try {
+    autoUpdater = require('electron-updater').autoUpdater
+  } catch (e) {
+    log.error('[updater] failed to load electron-updater', e)
+    return
+  }
+  autoUpdater.logger = log
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
   autoUpdater.on('checking-for-update', () => {
     log.info('[updater] checking for update')
     sendStatus('checking')
@@ -126,6 +136,7 @@ function sendStatus(status, payload) {
 // Manual update check from renderer
 ipcMain.handle('updater:check', async () => {
   if (isDev) return { ok: false, reason: 'dev' }
+  if (!autoUpdater) return { ok: false, reason: 'updater-not-loaded' }
   try {
     const r = await autoUpdater.checkForUpdates()
     return { ok: true, version: r?.updateInfo?.version }
@@ -134,7 +145,7 @@ ipcMain.handle('updater:check', async () => {
   }
 })
 ipcMain.handle('updater:quit-and-install', () => {
-  autoUpdater.quitAndInstall()
+  if (autoUpdater) autoUpdater.quitAndInstall()
 })
 ipcMain.handle('app:version', () => app.getVersion())
 
