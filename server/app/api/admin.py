@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func, desc
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.recording_cleanup import purge_expired_recordings
 from app.models.user import User
 from app.models.meeting import Meeting, MeetingParticipant, MeetingRecording
 from app.models.organization import Organization, Notification
@@ -65,6 +67,22 @@ def system_stats(
         "total_organizations": total_orgs,
         "total_participants_joined": total_participants,
     }
+
+
+# ── Recordings retention ──────────────────────────────────────────────────
+
+@router.post("/recordings/purge")
+def purge_recordings_now(
+    days: int | None = Query(default=None, ge=1),
+    user: User = Depends(get_current_user),
+):
+    """Manually trigger the expired-recording sweep. Defaults to the configured retention."""
+    _require_admin(user)
+    retention = days if days is not None else get_settings().recording_retention_days
+    if retention <= 0:
+        raise HTTPException(status_code=400, detail="retention must be > 0")
+    purged = purge_expired_recordings(retention)
+    return {"purged": purged, "retention_days": retention}
 
 
 # ── User management ──────────────────────────────────────────────────────

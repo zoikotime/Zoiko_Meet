@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
+from app.core.recording_cleanup import recording_cleanup_loop
 from app.api import auth, users, chat, meetings, recordings, organizations, notifications, invites, dashboard, ai, admin, calls
 from app.websocket import chat as chat_ws, signaling as meeting_ws
 from app.connect import router as connect_router
@@ -18,7 +20,15 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    yield
+    cleanup_task = asyncio.create_task(recording_cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Zoiko connect API", version="0.1.0", lifespan=lifespan)

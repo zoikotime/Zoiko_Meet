@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     ai_model: str = "claude-sonnet-4-20250514"
 
+    # Recording retention — recordings older than this are auto-deleted.
+    # Set to 0 to disable the cleanup loop entirely.
+    recording_retention_days: int = 30
+    recording_cleanup_interval_seconds: int = 3600
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

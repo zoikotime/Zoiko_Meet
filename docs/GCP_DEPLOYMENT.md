@@ -92,3 +92,34 @@ needs to switch to:
 4. Migration job before rolling the deployment
 
 That pipeline rewrite is a separate work item.
+
+## Cloud Run Dockerfile path (common failure)
+
+If you deploy from repository root, Cloud Run / Cloud Build will not find a
+Dockerfile unless you point to the `server/` location explicitly.
+
+Use one of these patterns:
+
+```bash
+# Option A: Deploy source directly from the server folder
+gcloud run deploy zoiko-server \
+	--source ./server \
+	--region <REGION> \
+	--allow-unauthenticated
+```
+
+```bash
+# Option B: Build explicitly from the server folder, then deploy image
+cd server
+gcloud builds submit . \
+	--tag <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/zoiko-server:latest
+
+gcloud run deploy zoiko-server \
+	--image <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/zoiko-server:latest \
+	--region <REGION> \
+	--allow-unauthenticated
+```
+
+`server/Dockerfile` expects its build context to include `requirements.txt`
+and `app/` at the context root. If you use custom build tooling, set build
+context to `server/` (or equivalent) to match that layout.
