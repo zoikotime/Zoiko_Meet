@@ -395,7 +395,7 @@ export default function Chat() {
       setIsRecording(true)
       setRecTime(0)
       recTimerRef.current = setInterval(() => setRecTime((t) => t + 1), 1000)
-    } catch (e) {
+    } catch {
       alert('Microphone permission denied or unavailable.')
     }
   }
@@ -711,6 +711,15 @@ export default function Chat() {
 // ── Message Bubble ──────────────────────────────────────────────────────
 
 function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDelete, emojiPickerOpen, onToggleEmojiPicker, readBy }) {
+  const reactionGroups = useMemo(() => {
+    const groups = {}
+    for (const r of (msg.reactions || [])) {
+      if (!groups[r.emoji]) groups[r.emoji] = []
+      groups[r.emoji].push(r)
+    }
+    return groups
+  }, [msg.reactions])
+
   if (msg.deleted_at) {
     return (
       <div className="chat-bubble deleted">
@@ -723,16 +732,6 @@ function MessageBubble({ msg, isMine, isChannelCreator, onReply, onReact, onDele
   const hasFile = !!msg.file_url
   const isImage = hasFile && isImageType(msg.file_type)
   const isAudio = hasFile && ((msg.file_type || '').startsWith('audio/') || /\.(webm|mp3|wav|ogg|m4a)$/i.test(msg.file_name || ''))
-
-  // Group reactions by emoji
-  const reactionGroups = useMemo(() => {
-    const groups = {}
-    for (const r of (msg.reactions || [])) {
-      if (!groups[r.emoji]) groups[r.emoji] = []
-      groups[r.emoji].push(r)
-    }
-    return groups
-  }, [msg.reactions])
 
   return (
     <div className="chat-bubble-wrap">

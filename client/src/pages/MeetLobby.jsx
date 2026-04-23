@@ -48,7 +48,7 @@ export default function MeetLobby() {
         if (videoRef.current) videoRef.current.srcObject = stream
         setStarting(false)
         refreshDevices()
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setErr('Could not access camera/microphone. Check browser permissions.')
           setStarting(false)

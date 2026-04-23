@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getApiBase, getWsBase, uploadFile } from '../api/client'
+import { getApiBase, getWsBase } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
@@ -29,7 +29,7 @@ export default function MeetRoom() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [self, setSelf] = useState(null)
+  const [, setSelf] = useState(null)
   const [peers, setPeers] = useState({})
   const [audioOn, setAudioOn] = useState(true)
   const [videoOn, setVideoOn] = useState(true)
@@ -55,7 +55,6 @@ export default function MeetRoom() {
   const [speakingPeers, setSpeakingPeers] = useState(new Set())
   const [bgMode, setBgMode] = useState('none')
   const [noiseSupp, setNoiseSupp] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [qualityLevel, setQualityLevel] = useState('high')
 
   // Collaboration state
@@ -64,7 +63,7 @@ export default function MeetRoom() {
   const [showAnnotations, setShowAnnotations] = useState(false)
   const [remoteAnnotations, setRemoteAnnotations] = useState([])
   const [showSharePicker, setShowSharePicker] = useState(false)
-  const [shareMode, setShareMode] = useState(null) // 'screen' | 'window' | 'tab'
+  const [, setShareMode] = useState(null) // 'screen' | 'window' | 'tab'
   const [screenSharers, setScreenSharers] = useState({}) // { peerId: { name, share_mode } }
 
   // Recording state
@@ -653,7 +652,7 @@ export default function MeetRoom() {
             body: formData,
           })
           if (!res.ok) console.error('Failed to upload recording')
-        } catch (e) {
+        } catch {
           // Save locally as fallback
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')

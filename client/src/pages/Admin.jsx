@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
 import Avatar from '../components/Avatar'
 import './Admin.css'
@@ -11,7 +10,6 @@ function formatDate(iso) {
 }
 
 export default function Admin() {
-  const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
   const [meetings, setMeetings] = useState([])
