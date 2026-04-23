@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import Icon from './Icon'
 import NotificationBell from './NotificationBell'
+import DesktopStatus from './DesktopStatus'
 import './Layout.css'
 
 const NAV = [
@@ -50,6 +51,7 @@ export default function Layout() {
         <div className="side-footer">
           {user && (
             <>
+            <DesktopStatus />
             <div className="side-notif-row">
               <NotificationBell />
             </div>

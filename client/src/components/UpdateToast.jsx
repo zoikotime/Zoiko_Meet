@@ -1,59 +1,100 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
 import './UpdateToast.css'
 
+const AUTO_DISMISS_MS = 4500
+
 export default function UpdateToast() {
   const [state, setState] = useState(null)
+  const [dismissed, setDismissed] = useState(false)
+  const timerRef = useRef(null)
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.zoiko?.isElectron) return
     const off = window.zoiko.onUpdaterStatus(({ status, payload }) => {
+      setDismissed(false)
       setState({ status, payload })
     })
     return off
   }, [])
 
-  if (!state) return null
+  useEffect(() => {
+    if (!state) return
+    clearTimeout(timerRef.current)
+    const { status } = state
+    if (status === 'not-available' || status === 'error') {
+      timerRef.current = setTimeout(() => setDismissed(true), AUTO_DISMISS_MS)
+    }
+    return () => clearTimeout(timerRef.current)
+  }, [state])
+
+  if (!state || dismissed) return null
   const { status, payload } = state
 
-  // Only surface meaningful states — stay quiet for 'checking' / 'not-available'
-  if (status === 'available') {
-    return (
-      <div className="upd-toast">
-        <div className="upd-toast-icon"><Icon name="sparkle" size={16} /></div>
-        <div className="upd-toast-body">
-          <div className="upd-toast-title">Update available</div>
-          <div className="upd-toast-sub">Downloading Zoiko connect {payload?.version}…</div>
-        </div>
-      </div>
+  const close = () => setDismissed(true)
+
+  let iconName = 'sparkle'
+  let tone = ''
+  let title = ''
+  let sub = null
+  let progress = null
+  let action = null
+
+  if (status === 'checking') {
+    iconName = 'cloudDownload'
+    title = 'Checking for updates'
+    sub = 'Looking for a newer version of Zoiko connect…'
+  } else if (status === 'available') {
+    iconName = 'sparkle'
+    tone = 'info'
+    title = 'Update available'
+    sub = `Downloading Zoiko connect ${payload?.version || ''}`.trim() + '…'
+  } else if (status === 'progress') {
+    iconName = 'bolt'
+    tone = 'info'
+    title = 'Downloading update'
+    sub = payload?.percent != null ? `${payload.percent}% complete` : null
+    progress = payload?.percent || 0
+  } else if (status === 'downloaded') {
+    iconName = 'check'
+    tone = 'ready'
+    title = 'Update ready'
+    sub = `Zoiko connect ${payload?.version || ''} will install on restart.`
+    action = (
+      <button className="primary sm" onClick={() => window.zoiko?.quitAndInstall()}>
+        Restart
+      </button>
     )
+  } else if (status === 'not-available') {
+    iconName = 'check'
+    tone = 'ok'
+    title = 'You’re up to date'
+    sub = 'Running the latest version of Zoiko connect.'
+  } else if (status === 'error') {
+    iconName = 'shield'
+    tone = 'err'
+    title = 'Update check failed'
+    sub = payload?.message || 'Please try again later.'
+  } else {
+    return null
   }
-  if (status === 'progress') {
-    return (
-      <div className="upd-toast">
-        <div className="upd-toast-icon"><Icon name="bolt" size={16} /></div>
-        <div className="upd-toast-body">
-          <div className="upd-toast-title">Downloading update</div>
+
+  return (
+    <div className={`upd-toast ${tone ? 'upd-' + tone : ''}`} role="status" aria-live="polite">
+      <div className="upd-toast-icon"><Icon name={iconName} size={16} /></div>
+      <div className="upd-toast-body">
+        <div className="upd-toast-title">{title}</div>
+        {sub && <div className="upd-toast-sub">{sub}</div>}
+        {progress != null && (
           <div className="upd-toast-progress">
-            <div className="upd-toast-progress-bar" style={{ width: `${payload?.percent || 0}%` }} />
+            <div className="upd-toast-progress-bar" style={{ width: `${progress}%` }} />
           </div>
-        </div>
+        )}
       </div>
-    )
-  }
-  if (status === 'downloaded') {
-    return (
-      <div className="upd-toast">
-        <div className="upd-toast-icon"><Icon name="check" size={16} /></div>
-        <div className="upd-toast-body">
-          <div className="upd-toast-title">Update ready</div>
-          <div className="upd-toast-sub">Zoiko connect {payload?.version} will install on restart.</div>
-        </div>
-        <button className="primary sm" onClick={() => window.zoiko?.quitAndInstall()}>
-          Restart
-        </button>
-      </div>
-    )
-  }
-  return null
+      {action}
+      <button className="upd-toast-close" onClick={close} aria-label="Dismiss">
+        <Icon name="close" size={14} />
+      </button>
+    </div>
+  )
 }
