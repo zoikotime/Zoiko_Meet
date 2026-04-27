@@ -55,6 +55,15 @@ export default function MeetRoom() {
   // Pin: per-viewer override that beats auto active-speaker. 'self' or peer_id.
   const [pinnedPeerId, setPinnedPeerId] = useState(null)
 
+  // Wall-clock for the bottom-left badge (Google Meet-style "6:01 PM | code")
+  const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
+  useEffect(() => {
+    const id = setInterval(() => {
+      setClock(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [])
+
   // AI recap modal
   const [recapText, setRecapText] = useState('')
   const [recapLoading, setRecapLoading] = useState(false)
@@ -1373,6 +1382,11 @@ export default function MeetRoom() {
 
       {/* ── Bottom controls ─────────────────────────────────────────────── */}
       <div className="room-controls">
+        <div className="room-controls-info" aria-hidden="false">
+          <span className="clock">{clock}</span>
+          <span className="sep">|</span>
+          <span className="code">{code}</span>
+        </div>
         <div className="room-controls-group">
           <button className={'round-btn lg' + (audioOn ? '' : ' off')} onClick={toggleAudio} title={audioOn ? 'Mute' : 'Unmute'}>
             <Icon name={audioOn ? 'mic' : 'micOff'} size={26} />
@@ -1577,11 +1591,12 @@ function PeerTile({ peer, spotlight = false, mini = false, speaking = false, pin
   if (speaking) cls.push('speaking')
   if (pinned) cls.push('pinned')
 
+  const tint = peer.color || '#7c8cff'
   return (
-    <div className={cls.join(' ')}>
+    <div className={cls.join(' ')} style={{ '--peer-tint': tint }}>
       {!videoOff && peer.stream
         ? <video ref={videoRef} autoPlay playsInline />
-        : <div className="tile-placeholder"><Avatar name={peer.name || '?'} color={peer.color || '#7c8cff'} size={mini ? 'sm' : 'lg'} /></div>}
+        : <div className="tile-placeholder"><Avatar name={peer.name || '?'} color={tint} size={mini ? 'sm' : 'lg'} /></div>}
       {peer.hand && <div className="tile-hand" title="Hand raised"><Icon name="hand" size={16} /></div>}
       {onTogglePin && (
         <button

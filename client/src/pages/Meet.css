@@ -555,7 +555,8 @@
 
 /* Tile */
 .tile {
-  background: #0c0c14;
+  --peer-tint: #7c8cff;
+  background: color-mix(in srgb, var(--peer-tint) 22%, #0c0c14 78%);
   border-radius: var(--r-lg);
   overflow: hidden;
   position: relative;
@@ -567,8 +568,8 @@
   animation: fadeIn var(--dur) var(--ease-out) both;
 }
 .tile.speaking {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 0 24px -4px var(--accent-glow);
+  border-color: var(--peer-tint);
+  box-shadow: 0 0 0 1px var(--peer-tint), 0 0 28px -4px color-mix(in srgb, var(--peer-tint) 70%, transparent);
 }
 
 .tile video {
@@ -585,12 +586,19 @@
   height: 100%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #0f0f17, #1a1a28);
+  background:
+    radial-gradient(ellipse at center,
+      color-mix(in srgb, var(--peer-tint) 38%, #0c0c14 62%) 0%,
+      color-mix(in srgb, var(--peer-tint) 18%, #0a0a12 82%) 70%);
 }
 .tile-placeholder .avatar {
-  width: 84px; height: 84px;
-  font-size: 28px;
-  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(255,255,255,0.08);
+  width: 140px; height: 140px;
+  font-size: 48px;
+  box-shadow: 0 12px 40px -10px rgba(0,0,0,0.7), inset 0 0 0 2px rgba(255,255,255,0.10);
+}
+.tile.mini .tile-placeholder .avatar {
+  width: 56px; height: 56px;
+  font-size: 22px;
 }
 
 .tile-name {
@@ -751,6 +759,36 @@
   flex-wrap: wrap;
   position: relative;
   z-index: 20;
+}
+
+/* Bottom-left clock + meeting code (Google Meet-style "6:01 PM | hrx-zktv-goe") */
+.room-controls-info {
+  position: absolute;
+  left: 22px;
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.92);
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.room-controls-info .clock {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.room-controls-info .sep {
+  opacity: 0.4;
+}
+.room-controls-info .code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+}
+@media (max-width: 720px) {
+  .room-controls-info { display: none; }
 }
 
 .room-controls-group {
