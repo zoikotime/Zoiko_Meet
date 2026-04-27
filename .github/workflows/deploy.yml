@@ -1,233 +1,119 @@
 name: CI/CD Deploy
 
-# Continuous deployment: on every push to main, build+push Docker images for
-# server and client to GHCR, then SSH into the production host and roll them
-# out with docker compose. Also runs on manual dispatch for ad-hoc redeploys.
-
 on:
   push:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'client/**'
-      - 'docker-compose.prod.yml'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch: {}
-
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
   IMAGE_SERVER: ${{ github.repository }}/server
   IMAGE_CLIENT: ${{ github.repository }}/client
+  REGION: europe-west1
+  SERVICE: zoiko-meet-git
 
 jobs:
-  # ------------------------------------------------------------------
-  # 1. Sanity checks: lint client, install server deps, import-check app
-  # ------------------------------------------------------------------
   verify:
     name: Verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: client/package-lock.json
-
       - name: Install client deps
         working-directory: client
         run: npm ci
-
       - name: Lint client
         working-directory: client
-        # Non-blocking: reports existing lint debt without gating deployment.
-        # Tighten to a hard fail once the pre-existing issues in
-        # AnnotationOverlay.jsx / MeetRoom.jsx are cleaned up.
         continue-on-error: true
         run: npm run lint --if-present
-
-      - name: Build client (smoke)
+      - name: Build client smoke
         working-directory: client
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE || 'http://localhost:8001' }}
         run: npm run build
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: server/requirements.txt
-
       - name: Install server deps
         working-directory: server
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Import-check server
         working-directory: server
         run: python -c "from app.main import app; print('ok')"
 
-  # ------------------------------------------------------------------
-  # 2. Build + push Docker images to GHCR
-  # ------------------------------------------------------------------
   build-and-push:
-    name: Build & Push Images
+    name: Build and Push Images
     needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
-    outputs:
-      server_tag: ${{ steps.meta_server.outputs.version }}
-      client_tag: ${{ steps.meta_client.outputs.version }}
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # --- Server image ---
-      - name: Server metadata
-        id: meta_server
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_SERVER }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short
-
-      - name: Build & push server
+      - name: Build and push server
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
-          tags: ${{ steps.meta_server.outputs.tags }}
-          labels: ${{ steps.meta_server.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_SERVER }}:latest
           cache-from: type=gha,scope=server
           cache-to: type=gha,mode=max,scope=server
-
-      # --- Client image ---
-      - name: Client metadata
-        id: meta_client
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_CLIENT }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short
-
-      - name: Build & push client
+      - name: Build and push client
         uses: docker/build-push-action@v5
         with:
           context: ./client
           push: true
-          tags: ${{ steps.meta_client.outputs.tags }}
-          labels: ${{ steps.meta_client.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_CLIENT }}:latest
           build-args: |
             VITE_API_BASE=${{ vars.VITE_API_BASE || 'http://localhost:8001' }}
           cache-from: type=gha,scope=client
           cache-to: type=gha,mode=max,scope=client
 
-  # ------------------------------------------------------------------
-  # 3. Deploy — SSH to host and roll out new images with docker compose
-  # ------------------------------------------------------------------
   deploy:
-    name: Deploy to Production
-    needs: build-and-push
+    name: Deploy to Cloud Run
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ vars.PRODUCTION_URL }}
-
+    needs: build-and-push
     steps:
       - uses: actions/checkout@v4
-
-      - name: Copy compose file to host
-        uses: appleboy/scp-action@v0.1.7
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "docker-compose.prod.yml"
-          target: "${{ secrets.DEPLOY_PATH }}"
-
-      - name: Roll out on host
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          # Pin to the immutable SHA tag the build job just pushed, so
-          # concurrent runs/rollbacks deploy a known image instead of
-          # whatever happens to be on :latest at pull time.
-          SHORT_SHA: ${{ github.sha }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.DEPLOY_PATH }}"
-
-            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-
-            # Write runtime env file (secrets stay on host, never in image)
-            cat > .env <<EOF
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_SERVER }}:latest
+          env_vars: |
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
-            FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-            SMTP_FROM_EMAIL=${{ vars.SMTP_FROM_EMAIL }}
-            SMTP_FROM_NAME=${{ vars.SMTP_FROM_NAME }}
-            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-            AI_MODEL=${{ vars.AI_MODEL }}
-            SERVER_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_SERVER }}:sha-${SHORT_SHA}
-            CLIENT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_CLIENT }}:sha-${SHORT_SHA}
-            EOF
-            chmod 600 .env
-
-            # Log in to GHCR so compose can pull private images
-            echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-            # Pull fresh images and restart only changed services
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            # Prune old images to reclaim disk
-            docker image prune -f
-
       - name: Health check
         run: |
-          URL="${{ vars.PRODUCTION_URL }}/api/health"
-          echo "Probing $URL"
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          URL="https://zoiko-meet-git-722985113446.europe-west1.run.app/api/health"
+          for i in $(seq 1 10); do
             if curl -fsS --max-time 5 "$URL" > /dev/null; then
-              echo "Healthy."
+              echo "Healthy!"
               exit 0
             fi
-            echo "  attempt $i failed, retrying in 3s..."
+            echo "Attempt $i failed, retrying..."
             sleep 3
           done
-          echo "Health check never succeeded." >&2
           exit 1
