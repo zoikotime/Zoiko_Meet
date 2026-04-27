@@ -7,8 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_SERVER: ${{ github.repository }}/server
-  IMAGE_CLIENT: ${{ github.repository }}/client
+  IMAGE_SERVER: ghcr.io/zoikotime/zoiko_meet/server
+  IMAGE_CLIENT: ghcr.io/zoikotime/zoiko_meet/client
   REGION: europe-west1
   SERVICE: zoiko-meet-git
 
