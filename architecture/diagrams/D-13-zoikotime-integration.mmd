@@ -1,0 +1,9 @@
+%% D-13 ZoikoTime Integration — source: SPEC.md Appendix A
+sequenceDiagram
+  ZoikoTime->>IntegrationService: WorkforceStateChanged
+  IntegrationService->>IntegrationService: validate signature/schema/tenant
+  IntegrationService->>EventBus: publish internal event
+  EventBus->>PresenceService: update verified presence
+  EventBus->>SignalService: enrich context
+  SignalService->>IntegrationService: CommunicationSignalReady
+  IntegrationService->>ZoikoTime: export permitted signal

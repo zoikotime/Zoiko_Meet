@@ -1,0 +1,10 @@
+%% D-12 Tenancy Model — source: SPEC.md Appendix A
+flowchart TD
+  User --> Membership
+  Membership --> Organisation
+  Organisation --> WorkspaceA
+  Organisation --> WorkspaceB
+  WorkspaceA --> ChannelsMeetingsFiles
+  WorkspaceA --> PoliciesEntitlements
+  WorkspaceA --> ResidencyRegion
+  WorkspaceA --> OptionalZoikoTimeLink

@@ -1,0 +1,14 @@
+%% D-06 AI and Signal Plane — transcribed from SPEC.md §7
+flowchart TB
+  subgraph AI_and_Signal_Plane
+    Orchestrator[AI Orchestration Service]
+    Signal[Signal Extraction Service]
+    Governance[AI Evaluation and Governance Service]
+  end
+  Trigger[Meeting end / channel summary / thread summary] --> Orchestrator
+  Orchestrator --> ModelRouter[Model Router]
+  ModelRouter --> ModelProviders[(External Model Providers)]
+  Orchestrator --> Signal
+  Signal --> StructuredSignal[(Action items / Decisions / Issues)]
+  Governance -.controls.-> Orchestrator
+  Governance -.controls.-> ModelRouter

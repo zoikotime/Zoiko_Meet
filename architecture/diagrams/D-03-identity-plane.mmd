@@ -1,0 +1,13 @@
+%% D-03 Identity and Control Plane — transcribed from SPEC.md §7
+flowchart TB
+  subgraph Identity_and_Control_Plane
+    IdentityService[Identity Service]
+    AuthorisationService[Authorisation and Policy Service]
+    WorkspaceService[Organisation and Workspace Service]
+    GuestService[Guest and External Access Service]
+  end
+  IdentityService --> AuthorisationService
+  WorkspaceService --> AuthorisationService
+  GuestService --> AuthorisationService
+  IdentityProviders[(SSO / OIDC / SAML / SCIM)] --> IdentityService
+  Entitlements[(Entitlement records)] --> AuthorisationService

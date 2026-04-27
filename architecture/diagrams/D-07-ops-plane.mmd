@@ -1,0 +1,12 @@
+%% D-07 Operations and Governance Plane — transcribed from SPEC.md §7
+flowchart TB
+  subgraph Operations_and_Governance_Plane
+    Billing[Billing and Metering Service]
+    Audit[Audit, Compliance and Evidence Service]
+    Observability[Observability Backbone]
+  end
+  EventBus --> Billing
+  EventBus --> Audit
+  AllServices[All platform services] --> Observability
+  Billing --> Payments[(Payment / Tax / Invoice)]
+  Audit --> EvidenceStore[(Append-only evidence store)]

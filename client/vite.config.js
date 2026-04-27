@@ -1,0 +1,10 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// Electron loads the built app from the filesystem (file://), so asset URLs
+// must be relative. For the web/docker build, relative paths still resolve
+// correctly under the nginx root.
+export default defineConfig({
+  base: './',
+  plugins: [react()],
+})

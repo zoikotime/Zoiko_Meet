@@ -1,0 +1,9 @@
+%% D-11 Trust Boundaries — source: SPEC.md Appendix A
+flowchart TB
+  Internet --> EdgeWAF
+  EdgeWAF --> APIGateway
+  APIGateway --> ServiceMesh
+  ServiceMesh --> DataPlane
+  ServiceMesh --> AISubsystem
+  ServiceMesh --> AdminControlPlane
+  ServiceMesh --> ThirdPartyProviders

@@ -1,0 +1,11 @@
+%% D-01 System Context — source: SPEC.md Appendix A
+flowchart LR
+  Users --> Clients
+  Clients --> Edge
+  Edge --> Platform[Zoiko Sema / Connect Shared Core]
+  Platform --> ZoikoTime
+  Platform --> IdentityProviders
+  Platform --> AIProviders
+  Platform --> MediaProviders
+  Platform --> Payments
+  Platform --> ExternalApps

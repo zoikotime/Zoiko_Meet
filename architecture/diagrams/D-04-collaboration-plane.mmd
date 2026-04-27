@@ -1,0 +1,15 @@
+%% D-04 Collaboration Data Plane — transcribed from SPEC.md §7
+flowchart TB
+  subgraph Collaboration_Data_Plane
+    Messaging[Messaging Service]
+    RealTime[Real-Time Gateway]
+    Notifications[Notification Service]
+    Files[File and Object Service]
+    Search[Search and Indexing Service]
+  end
+  Messaging --> EventBus
+  EventBus --> RealTime
+  EventBus --> Notifications
+  EventBus --> Search
+  Files --> ObjectStorage[(Object Storage)]
+  Search --> SearchIndex[(Permission-aware Index)]

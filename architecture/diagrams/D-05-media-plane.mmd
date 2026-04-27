@@ -1,0 +1,12 @@
+%% D-05 Media Plane — transcribed from SPEC.md §7
+flowchart TB
+  subgraph Media_Plane
+    MeetingOrchestration[Meeting Orchestration Service]
+    MediaControl[Media Control Service]
+    Recording[Recording and Transcript Service]
+  end
+  Client[Client] --> MeetingOrchestration
+  MeetingOrchestration --> MediaControl
+  MediaControl --> SFUProvider[(SFU / Media Provider)]
+  Recording --> ObjectStorage[(Object Storage)]
+  MeetingOrchestration --> Recording

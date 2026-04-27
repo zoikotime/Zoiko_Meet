@@ -1,0 +1,12 @@
+%% D-02 Container View — source: SPEC.md Appendix A
+flowchart TB
+  WebApp --> APIGateway
+  MobileApps --> APIGateway
+  DesktopApp --> APIGateway
+  APIGateway --> IdentityService
+  APIGateway --> WorkspaceService
+  APIGateway --> MessagingService
+  MessagingService --> EventBus
+  EventBus --> RealTimeGateway
+  EventBus --> SearchService
+  EventBus --> BillingService

@@ -1,0 +1,11 @@
+%% D-08 Message Send Flow — source: SPEC.md Appendix A
+sequenceDiagram
+  Client->>APIGateway: POST /messages
+  APIGateway->>Identity: validate session
+  APIGateway->>Authorisation: check permission
+  APIGateway->>Messaging: persist message
+  Messaging->>EventBus: MessagePosted
+  EventBus->>RealTimeGateway: fanout
+  EventBus->>Notification: notify
+  EventBus->>Search: index
+  EventBus->>Billing: meter

@@ -1,0 +1,9 @@
+%% D-09 Meeting Join Flow — source: SPEC.md Appendix A
+sequenceDiagram
+  Client->>APIGateway: open meeting link
+  APIGateway->>Identity: authenticate/guest
+  APIGateway->>Authorisation: validate access
+  APIGateway->>MeetingOrchestration: request join
+  MeetingOrchestration->>MediaControl: choose region/provider
+  MeetingOrchestration-->>Client: media token
+  Client->>SFUProvider: establish media

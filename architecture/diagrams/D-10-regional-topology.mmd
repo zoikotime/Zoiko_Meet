@@ -1,0 +1,11 @@
+%% D-10 Regional Topology — source: SPEC.md Appendix A
+flowchart LR
+  Edge --> USRegion
+  Edge --> EURegion
+  Edge --> APACRegion
+  USRegion --> USData
+  EURegion --> EUData
+  APACRegion --> APACData
+  GlobalControlPlane -.policy.-> USRegion
+  GlobalControlPlane -.policy.-> EURegion
+  GlobalControlPlane -.policy.-> APACRegion
