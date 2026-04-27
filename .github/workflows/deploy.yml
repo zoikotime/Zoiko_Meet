@@ -6,9 +6,9 @@ on:
   workflow_dispatch: {}
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_SERVER: zoikotime/zoiko_meet/server
-  IMAGE_CLIENT: zoikotime/zoiko_meet/client
+  REGISTRY: europe-west1-docker.pkg.dev/project-4b10b0ae-f69d-47e2-90d/zoiko-meet
+  IMAGE_SERVER: server
+  IMAGE_CLIENT: client
   REGION: europe-west1
   SERVICE: zoiko-meet-git
 
