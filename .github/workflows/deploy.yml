@@ -38,6 +38,11 @@ jobs:
           context: ./client
           push: true
           tags: ${{ env.REGISTRY }}/client:latest
+          # The client is a static SPA; VITE_API_BASE is a build-time
+          # constant. Without this, the deployed client tries to fetch
+          # http://localhost:8080 from the user's browser → "failed to fetch".
+          build-args: |
+            VITE_API_BASE=${{ vars.VITE_API_BASE }}
 
   deploy-server:
     name: Deploy Server to Cloud Run
@@ -55,8 +60,12 @@ jobs:
           service: zoiko-meet-git
           region: ${{ env.REGION }}
           image: ${{ env.REGISTRY }}/server:latest
+          # CORS_ORIGINS must include the deployed client's Cloud Run URL,
+          # otherwise the browser blocks every API call from the SPA.
           env_vars: |
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+            FRONTEND_URL=${{ vars.FRONTEND_URL }}
 
   deploy-client:
     name: Deploy Client to Cloud Run
