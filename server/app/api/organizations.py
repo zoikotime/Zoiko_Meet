@@ -202,8 +202,8 @@ def invite_member(
         settings = get_settings()
         send_email(
             data.email,
-            f"You've been invited to {org.name} on Zoiko connect",
-            f'<p>{user.name} invited you to join <strong>{org.name}</strong> on Zoiko connect.</p>'
+            f"You've been invited to {org.name} on Zoiko sema",
+            f'<p>{user.name} invited you to join <strong>{org.name}</strong> on Zoiko sema.</p>'
             f'<p><a href="{settings.frontend_url}/register">Sign up to join</a></p>',
         )
         return {"detail": "Invite email sent", "email": data.email}

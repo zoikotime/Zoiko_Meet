@@ -1099,7 +1099,7 @@ export default function MeetRoom() {
       <div className="room-topbar">
         <div className="room-topbar-brand">
           <span className="room-topbar-brand-mark">Z</span>
-          <span>Zoiko connect</span>
+          <span>Zoiko sema</span>
         </div>
         <div className="room-title" />
         <div className="room-meta">

@@ -1,4 +1,4 @@
-# Zoiko connect
+# Zoiko sema
 
 A Google Meet–style video meeting app with Microsoft Teams–style chat, built on a
 FastAPI + React stack.
@@ -119,7 +119,7 @@ App: http://localhost:5173
 
 ## Desktop app (Electron)
 
-Zoiko connect also ships as a cross-platform desktop app with **auto-updates** via GitHub Releases.
+Zoiko sema also ships as a cross-platform desktop app with **auto-updates** via GitHub Releases.
 
 ### Run in dev
 

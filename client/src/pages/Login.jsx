@@ -41,7 +41,7 @@ export default function Login() {
         <section className="auth-hero">
           <div className="auth-hero-logo">
             <span className="auth-hero-logo-mark">Z</span>
-            <span>Zoiko connect</span>
+            <span>Zoiko sema</span>
           </div>
           <h1>
             Meetings and chat,<br />

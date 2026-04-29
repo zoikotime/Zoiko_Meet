@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from_email: str = "noreply@zoikomeet.com"
-    smtp_from_name: str = "Zoiko connect"
+    smtp_from_name: str = "Zoiko sema"
     smtp_use_tls: bool = True
 
     # Frontend base URL for invite links
