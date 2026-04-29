@@ -11,7 +11,7 @@
 
 .app-sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  background: linear-gradient(180deg, var(--bg-1) 0%, var(--surface-tint) 100%);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -220,6 +220,9 @@
   box-shadow: none;
   border: none;
   background: transparent;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
 }
 .side-user-logout:hover { color: var(--danger); background: var(--danger-soft); transform: none; }
 
