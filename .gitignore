@@ -7,6 +7,20 @@ build/
 coverage/
 
 # =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+server/venv/
+server/.venv/
+server/zoiko.db
+server/zoiko.db-journal
+
+# =========================
 # Env files
 # =========================
 .env
