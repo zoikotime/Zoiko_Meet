@@ -21,7 +21,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: '#0b0b12',
-    title: 'Zoiko sema',
+    title: 'ZoikoSema',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -109,7 +109,7 @@ function wireAutoUpdater() {
         defaultId: 0,
         cancelId: 1,
         title: 'Update ready',
-        message: `Zoiko sema ${info?.version || ''} is ready to install.`,
+        message: `ZoikoSema ${info?.version || ''} is ready to install.`,
         detail: 'Restart the app to apply the update.',
       })
       .then((res) => {

@@ -501,6 +501,22 @@
   font-size: 12px;
   box-shadow: 0 4px 12px -4px var(--accent-glow);
 }
+.room-topbar-brand-name {
+  letter-spacing: -0.018em;
+  font-weight: 700;
+}
+.room-topbar-brand-pill {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(124,140,255,0.16);
+  color: #a8b2ff;
+  border: 1px solid rgba(124,140,255,0.30);
+  margin-left: 2px;
+}
 
 .room-title { flex: 1; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
 

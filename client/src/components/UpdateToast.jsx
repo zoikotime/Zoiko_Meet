@@ -43,12 +43,12 @@ export default function UpdateToast() {
   if (status === 'checking') {
     iconName = 'cloudDownload'
     title = 'Checking for updates'
-    sub = 'Looking for a newer version of Zoiko sema…'
+    sub = 'Looking for a newer version of ZoikoSema…'
   } else if (status === 'available') {
     iconName = 'sparkle'
     tone = 'info'
     title = 'Update available'
-    sub = `Downloading Zoiko sema ${payload?.version || ''}`.trim() + '…'
+    sub = `Downloading ZoikoSema ${payload?.version || ''}`.trim() + '…'
   } else if (status === 'progress') {
     iconName = 'bolt'
     tone = 'info'
@@ -59,7 +59,7 @@ export default function UpdateToast() {
     iconName = 'check'
     tone = 'ready'
     title = 'Update ready'
-    sub = `Zoiko sema ${payload?.version || ''} will install on restart.`
+    sub = `ZoikoSema ${payload?.version || ''} will install on restart.`
     action = (
       <button className="primary sm" onClick={() => window.zoiko?.quitAndInstall()}>
         Restart
@@ -69,7 +69,7 @@ export default function UpdateToast() {
     iconName = 'check'
     tone = 'ok'
     title = 'You’re up to date'
-    sub = 'Running the latest version of Zoiko sema.'
+    sub = 'Running the latest version of ZoikoSema.'
   } else if (status === 'error') {
     iconName = 'shield'
     tone = 'err'

@@ -168,7 +168,7 @@ export default function Home() {
         <div className="home-hero-top">
           <span className="badge accent">
             <Icon name="sparkle" size={12} />
-            <span>Welcome to Zoiko</span>
+            <span>ZoikoSema · Workspace</span>
           </span>
           <span className="home-hero-date">{today}</span>
         </div>
@@ -176,8 +176,15 @@ export default function Home() {
           {greeting()}, <span className="grad">{firstName}</span>
         </h1>
         <p className="home-hero-sub">
-          Jump into a meeting, share a link, or keep a conversation going.
+          Your meetings, chat, and AI assistant — all in one place. Start an instant call,
+          schedule for later, or pick up where your team left off.
         </p>
+        <div className="home-hero-pills">
+          <span className="home-hero-pill"><Icon name="video" size={11} /> Meet</span>
+          <span className="home-hero-pill"><Icon name="chat" size={11} /> Chat</span>
+          <span className="home-hero-pill"><Icon name="screen" size={11} /> Webinar</span>
+          <span className="home-hero-pill"><Icon name="robot" size={11} /> AI co-pilot</span>
+        </div>
       </header>
 
       {err && (

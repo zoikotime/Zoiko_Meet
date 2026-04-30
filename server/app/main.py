@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
             pass
 
 
-app = FastAPI(title="Zoiko sema API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="ZoikoSema API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

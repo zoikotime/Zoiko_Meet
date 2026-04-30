@@ -34,7 +34,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@zoikomeet.com}
-      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Zoiko sema}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-ZoikoSema}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
       # AI
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

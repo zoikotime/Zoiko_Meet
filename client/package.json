@@ -2,7 +2,7 @@
   "name": "zoiko-meet-client",
   "private": true,
   "version": "0.1.0",
-  "description": "Zoiko sema — video meetings + team chat (web + desktop)",
+  "description": "ZoikoSema — video meetings + team chat (web + desktop)",
   "author": {
     "name": "Zoiko",
     "email": "support@zoiko.app"
@@ -46,7 +46,7 @@
   },
   "build": {
     "appId": "com.zoiko.meet",
-    "productName": "Zoiko sema",
+    "productName": "ZoikoSema",
     "copyright": "Copyright © 2026 Zoiko",
     "asar": true,
     "files": [
@@ -83,7 +83,7 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Zoiko sema"
+      "shortcutName": "ZoikoSema"
     },
     "mac": {
       "target": [

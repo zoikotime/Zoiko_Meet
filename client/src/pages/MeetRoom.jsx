@@ -1099,7 +1099,8 @@ export default function MeetRoom() {
       <div className="room-topbar">
         <div className="room-topbar-brand">
           <span className="room-topbar-brand-mark">Z</span>
-          <span>Zoiko sema</span>
+          <span className="room-topbar-brand-name">ZoikoSema</span>
+          <span className="room-topbar-brand-pill">Meet</span>
         </div>
         <div className="room-title" />
         <div className="room-meta">

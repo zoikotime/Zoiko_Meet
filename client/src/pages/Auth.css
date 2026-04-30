@@ -132,6 +132,25 @@
   box-shadow: 0 6px 20px -6px var(--accent-glow);
 }
 
+.auth-hero-logo-text {
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  font-size: 14px;
+}
+
+.auth-hero-logo-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--accent-gradient-soft);
+  color: var(--accent);
+  border: 1px solid rgba(91,103,242,0.20);
+  margin-left: 2px;
+}
+
 .auth-hero h1 {
   font-size: 44px;
   line-height: 1.08;
@@ -203,6 +222,37 @@
 
 .auth-feature-title { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
 .auth-feature-desc  { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+/* ---------- Trust signals ---------- */
+.auth-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px;
+  max-width: 520px;
+}
+
+.auth-trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.005em;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.auth-trust-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.auth-trust-pill svg { color: var(--accent); }
 
 /* ---------- Right: form card ---------- */
 .auth-card {

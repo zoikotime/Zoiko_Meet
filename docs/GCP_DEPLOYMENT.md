@@ -1,4 +1,4 @@
-# Zoiko sema — GCP Deployment Notes
+# ZoikoSema — GCP Deployment Notes
 
 The v3 refactor assumes the following GCP resources. Everything else
 (legacy API, legacy WS) continues to run on whatever host the existing

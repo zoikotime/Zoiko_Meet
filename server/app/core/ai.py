@@ -7,10 +7,10 @@ from app.core.config import get_settings
 
 log = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are Zoiko, the AI assistant built into Zoiko sema — a real-time SaaS video conferencing and team chat platform.
+SYSTEM_PROMPT = """You are Zoiko, the AI assistant built into ZoikoSema — a real-time SaaS video conferencing and team chat platform.
 
 Your capabilities:
-- Answer questions about Zoiko sema features (meetings, chat, recordings, screen sharing, whiteboard, etc.)
+- Answer questions about ZoikoSema features (meetings, chat, recordings, screen sharing, whiteboard, etc.)
 - Help users create, join, and manage meetings
 - Summarize meeting discussions from chat logs
 - Generate meeting notes and action items

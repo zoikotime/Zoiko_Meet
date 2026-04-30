@@ -5,11 +5,13 @@ import Icon from '../components/Icon'
 import './Auth.css'
 
 const FEATURES = [
-  { icon: 'bolt', title: 'Start in seconds', desc: 'Instant meetings, no scheduling.' },
-  { icon: 'users', title: 'Invite your team', desc: 'Channels, DMs, presence.' },
-  { icon: 'screen', title: 'Share your screen', desc: 'One tap to present anything.' },
-  { icon: 'sparkle', title: 'Delightful UX', desc: 'Crafted with care in every pixel.' },
+  { icon: 'video', title: 'Meet, like Google Meet', desc: 'Instant rooms, screen share, recording.' },
+  { icon: 'chat', title: 'Chat, like Teams', desc: 'Channels, threads, files, presence.' },
+  { icon: 'screen', title: 'Webinar, like Zoom', desc: 'Host up to 1000 with crisp video.' },
+  { icon: 'robot', title: 'AI built-in', desc: 'Live captions, recap, action items.' },
 ]
+
+const TRUST = ['End-to-end encrypted', 'SOC 2 ready', '99.9% uptime', 'GDPR']
 
 export default function Register() {
   const { register } = useAuth()
@@ -50,14 +52,16 @@ export default function Register() {
         <section className="auth-hero">
           <div className="auth-hero-logo">
             <span className="auth-hero-logo-mark">Z</span>
-            <span>Zoiko sema</span>
+            <span className="auth-hero-logo-text">ZoikoSema</span>
+            <span className="auth-hero-logo-pill">Workspace</span>
           </div>
           <h1>
-            Everything your team<br />
-            needs to <span className="grad">collaborate.</span>
+            One workspace.<br />
+            <span className="grad">Three best-in-class apps.</span>
           </h1>
           <p className="auth-hero-sub">
-            Video meetings, persistent chat, and one simple home — built for your team.
+            Stop juggling Meet, Teams, and Zoom. ZoikoSema unifies HD video, persistent
+            chat, and webinar-grade calls — with AI baked in — for teams that move fast.
           </p>
           <div className="auth-hero-features">
             {FEATURES.map((f) => (
@@ -66,6 +70,13 @@ export default function Register() {
                 <div className="auth-feature-title">{f.title}</div>
                 <div className="auth-feature-desc">{f.desc}</div>
               </div>
+            ))}
+          </div>
+          <div className="auth-trust">
+            {TRUST.map((t) => (
+              <span key={t} className="auth-trust-pill">
+                <Icon name="shield" size={11} /> {t}
+              </span>
             ))}
           </div>
         </section>

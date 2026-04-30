@@ -5,11 +5,13 @@ import Icon from '../components/Icon'
 import './Auth.css'
 
 const FEATURES = [
-  { icon: 'video', title: 'HD video meetings', desc: 'One-click rooms with screen sharing.' },
-  { icon: 'chat', title: 'Team chat', desc: 'Channels, DMs and realtime messages.' },
-  { icon: 'link', title: 'Share a link', desc: 'Invite anyone with a meeting code.' },
-  { icon: 'shield', title: 'Peer-to-peer', desc: 'Direct streams, low latency.' },
+  { icon: 'video', title: 'HD video meetings', desc: 'Up to 1080p, screen share, recording, captions.' },
+  { icon: 'chat', title: 'Persistent team chat', desc: 'Channels, DMs, threads, file sharing.' },
+  { icon: 'robot', title: 'AI co-pilot', desc: 'Live captions, recap, action items.' },
+  { icon: 'shield', title: 'Enterprise-grade', desc: 'Encrypted, SSO-ready, audit logs.' },
 ]
+
+const TRUST = ['End-to-end encrypted', 'SOC 2 ready', '99.9% uptime', 'GDPR']
 
 export default function Login() {
   const { login } = useAuth()
@@ -41,15 +43,17 @@ export default function Login() {
         <section className="auth-hero">
           <div className="auth-hero-logo">
             <span className="auth-hero-logo-mark">Z</span>
-            <span>Zoiko sema</span>
+            <span className="auth-hero-logo-text">ZoikoSema</span>
+            <span className="auth-hero-logo-pill">Workspace</span>
           </div>
           <h1>
-            Meetings and chat,<br />
-            <span className="grad">beautifully together.</span>
+            Meetings, chat, and AI<br />
+            <span className="grad">in one workspace.</span>
           </h1>
           <p className="auth-hero-sub">
-            Jump into a video call or pick up a conversation with your team — no context
-            switching, no extra apps.
+            The unified collaboration platform — Google Meet-grade video, Teams-style
+            persistent chat, and a Zoom-class meeting experience. Built for teams that
+            ship.
           </p>
           <div className="auth-hero-features">
             {FEATURES.map((f) => (
@@ -58,6 +62,13 @@ export default function Login() {
                 <div className="auth-feature-title">{f.title}</div>
                 <div className="auth-feature-desc">{f.desc}</div>
               </div>
+            ))}
+          </div>
+          <div className="auth-trust">
+            {TRUST.map((t) => (
+              <span key={t} className="auth-trust-pill">
+                <Icon name="shield" size={11} /> {t}
+              </span>
             ))}
           </div>
         </section>

@@ -1,6 +1,6 @@
 name: Release Desktop
 
-# Build Zoiko sema desktop installers on tag push (vX.Y.Z) and publish
+# Build ZoikoSema desktop installers on tag push (vX.Y.Z) and publish
 # them to a GitHub Release. electron-updater reads the published feed
 # (latest.yml, latest-mac.yml, latest-linux.yml) to deliver in-app updates.
 
