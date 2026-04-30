@@ -62,8 +62,13 @@ jobs:
           image: ${{ env.REGISTRY }}/server:latest
           # CORS_ORIGINS must include the deployed client's Cloud Run URL,
           # otherwise the browser blocks every API call from the SPA.
+          # DATABASE_URL points at Supabase Postgres (Session Pooler — Cloud
+          # Run is IPv4-only, the direct db.<ref>.supabase.co host won't work).
+          # secrets_env: |
+          #   ANTHROPIC_API_KEY=anthropic-api-key:latest
           env_vars: |
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
             CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
             FRONTEND_URL=${{ vars.FRONTEND_URL }}
 
